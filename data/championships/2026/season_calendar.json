@@ -1,0 +1,12 @@
+[
+  {"round": 1, "name": "Australian Grand Prix", "track": "Melbourne", "date": "2026-03-08"},
+  {"round": 2, "name": "Bahrain Grand Prix", "track": "Sakhir", "date": "2026-04-12"},
+  {"round": 3, "name": "Miami Grand Prix", "track": "Miami", "date": "2026-05-03"},
+  {"round": 4, "name": "Red Bull Ring", "track": "Red Bull Ring", "date": "2026-06-07", "time": "17:00"},
+  {"round": 5, "name": "British Grand Prix", "track": "Silverstone", "date": "2026-07-05", "time": "16:00"},
+  {"round": 6, "name": "Belgian Grand Prix", "track": "Spa-Francorchamps", "date": "2026-08-02", "time": "16:00"},
+  {"round": 7, "name": "Dutch Grand Prix", "track": "Zandvoort", "date": "2026-09-06", "time": "16:00"},
+  {"round": 8, "name": "Italian Grand Prix", "track": "Monza", "date": "2026-10-04", "time": "16:00"},
+  {"round": 9, "name": "Canadian Grand Prix", "track": "Canada", "date": "2026-11-01", "time": "16:00"},
+  {"round": 10, "name": "Brazilian Grand Prix", "track": "Interlagos", "date": "2026-12-06", "time": "16:00"}
+]

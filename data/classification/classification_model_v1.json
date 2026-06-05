@@ -1,0 +1,6 @@
+{
+  "model_name": "SRCS Driver Classification Model v1",
+  "score_out_of": 100,
+  "notes": "Placeholder. Add scoring weights from the agreed SRCS classification framework. Rookie is an intake gateway, not a placement tier.",
+  "pathways": ["Premier Pathway", "League Pathway", "Reserve Pathway"]
+}

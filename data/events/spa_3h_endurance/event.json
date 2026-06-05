@@ -1,0 +1,18 @@
+{
+  "event_id": "spa_3h_endurance_2026",
+  "name": "The SRCS Spa 3-hour Endurance",
+  "event_type": "GT3 Endurance",
+  "track": "Spa-Francorchamps",
+  "duration_minutes": 180,
+  "drivers_per_car": 2,
+  "car_choices": ["Porsche", "Mercedes", "Lamborghini", "Ferrari"],
+  "settings": {
+    "tire_wear": true,
+    "pitstops": true,
+    "collisions": true,
+    "penalties": true,
+    "damage": true,
+    "day_night_day": true
+  },
+  "status": "planning"
+}
