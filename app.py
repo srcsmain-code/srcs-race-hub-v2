@@ -2,30 +2,106 @@ from __future__ import annotations
 
 import streamlit as st
 
-from config.settings import APP_NAME, APP_VERSION
-from src.ui_components import show_header
+from src.views.home import render as render_home
+from src.views.season_2026 import render as render_season_2026
+from src.views.standings import render as render_standings
+from src.views.spa_3h_endurance import render as render_spa_3h_endurance
+from src.views.register_spa_3h import render as render_register_spa_3h
+from src.views.rookie_intake import render as render_rookie_intake
+from src.views.admin import render as render_admin
 
-st.set_page_config(
-    page_title=APP_NAME,
-    page_icon="assets/logos/srcs_favicon_256.png",
-    layout="wide",
-)
 
-show_header("SRCS Race Hub v2", "Clean rebuild starter — public hub + operational backbone")
+st.set_page_config(page_title="SRCS Race Hub v2", layout="wide")
 
-st.markdown(
-    """
-Welcome to the clean Race Hub v2 starter.
 
-This rebuild separates the public Race Hub from the operational/admin layer:
+def is_admin_logged_in() -> bool:
+    return bool(st.session_state.get("admin_logged_in", False))
 
-- Public pages: standings, season calendar, endurance events, entry lists.
-- Input pages: registrations, rookie intake, attendance confirmations.
-- Admin pages: pending submissions, approvals, classification, event management.
-- Data layer: JSON-first for now, GitHub/database-ready later.
 
-Use the sidebar to open the starter pages.
-"""
-)
+def admin_login_box() -> None:
+    st.sidebar.divider()
+    st.sidebar.subheader("Admin")
 
-st.info(f"Version: {APP_VERSION}")
+    if is_admin_logged_in():
+        st.sidebar.success("Admin mode active")
+        if st.sidebar.button("Log out"):
+            st.session_state["admin_logged_in"] = False
+            st.rerun()
+        return
+
+    with st.sidebar.form("admin_login_form"):
+        password = st.text_input("Admin password", type="password")
+        submitted = st.form_submit_button("Unlock admin")
+
+    if submitted:
+        expected = st.secrets.get("ADMIN_PASSWORD", "")
+        if expected and password == expected:
+            st.session_state["admin_logged_in"] = True
+            st.rerun()
+        else:
+            st.sidebar.error("Incorrect password")
+
+
+def get_url_mode() -> str:
+    mode = st.query_params.get("mode", "public")
+    allowed_modes = {"public", "register_spa_3h", "admin"}
+    return mode if mode in allowed_modes else "public"
+
+
+def render_registration_only_mode() -> None:
+    render_register_spa_3h()
+
+
+def render_admin_mode() -> None:
+    if not is_admin_logged_in():
+        st.title("SRCS Race Hub Admin")
+        st.warning("Admin access required.")
+        st.info("Enter the admin password in the sidebar to continue.")
+        admin_login_box()
+        return
+
+    admin_pages = {
+        "Admin Dashboard": render_admin,
+        "Spa 3H Registration Form": render_register_spa_3h,
+        "Spa 3H Event Page": render_spa_3h_endurance,
+        "Rookie Intake": render_rookie_intake,
+        "Standings": render_standings,
+    }
+
+    st.sidebar.title("SRCS Admin")
+    selected = st.sidebar.radio("Admin menu", list(admin_pages.keys()))
+    admin_login_box()
+    admin_pages[selected]()
+
+
+def render_public_mode() -> None:
+    public_pages = {
+        "Home": render_home,
+        "Season 2026": render_season_2026,
+        "Standings": render_standings,
+        "Spa 3H Endurance": render_spa_3h_endurance,
+        "Register Spa 3H": render_register_spa_3h,
+        "Rookie Intake": render_rookie_intake,
+    }
+
+    st.sidebar.title("SRCS Race Hub")
+    selected = st.sidebar.radio("Menu", list(public_pages.keys()))
+    admin_login_box()
+
+    if is_admin_logged_in():
+        st.sidebar.divider()
+        if st.sidebar.button("Go to Admin mode"):
+            st.query_params["mode"] = "admin"
+            st.rerun()
+
+    public_pages[selected]()
+
+
+mode = get_url_mode()
+
+if mode == "register_spa_3h":
+    render_registration_only_mode()
+elif mode == "admin":
+    render_admin_mode()
+else:
+    render_public_mode()
