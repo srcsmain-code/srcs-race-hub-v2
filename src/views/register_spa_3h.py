@@ -17,9 +17,7 @@ def render() -> None:
     if github_configured():
         st.success("Registration storage is connected to GitHub.")
     else:
-        st.warning(
-            "GitHub storage is not configured yet. Add Streamlit secrets before accepting live registrations."
-        )
+        st.warning("GitHub storage is not configured yet. Add Streamlit secrets before accepting live registrations.")
 
     with st.form("spa_3h_registration"):
         st.subheader("Team details")
