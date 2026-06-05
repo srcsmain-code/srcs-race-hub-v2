@@ -3,17 +3,21 @@ from __future__ import annotations
 import streamlit as st
 
 from config.constants import ENDURANCE_CAR_CHOICES
-from src.registrations import create_pending_spa_entry
+from src.registrations import build_submission_id
+from src.github_writer import github_configured, commit_json_to_github
 from src.validation import is_valid_email, required_fields_present
 from src.ui_components import show_header
+from datetime import datetime, timezone
 
 st.set_page_config(page_title="Register — Spa 3H", layout="wide")
 show_header("Register for The SRCS Spa 3-hour Endurance", "Creates a pending registration submission")
 
-st.warning(
-    "Starter mode: submissions are saved locally into data/registrations/pending. "
-    "GitHub writes can be enabled later via Streamlit secrets."
-)
+if github_configured():
+    st.success("Registration storage is connected to GitHub.")
+else:
+    st.warning(
+        "GitHub storage is not configured yet. Add Streamlit secrets before accepting live registrations."
+    )
 
 with st.form("spa_3h_registration"):
     st.subheader("Team details")
@@ -38,7 +42,12 @@ with st.form("spa_3h_registration"):
     submitted = st.form_submit_button("Submit registration")
 
 if submitted:
+    submission_id = build_submission_id(team_name)
+
     payload = {
+        "submission_id": submission_id,
+        "submitted_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "pending",
         "event_id": "spa_3h_endurance_2026",
         "team_name": team_name,
         "car_choice": car_choice,
@@ -63,7 +72,19 @@ if submitted:
         st.error("Please enter valid email addresses for both drivers.")
     elif not consent:
         st.error("Consent is required to submit the registration.")
+    elif not github_configured():
+        st.error("GitHub storage is not configured. Please check Streamlit secrets.")
     else:
-        path = create_pending_spa_entry(payload)
-        st.success("Registration submitted as pending.")
-        st.code(str(path))
+        github_path = f"data/registrations/pending/spa_3h_endurance/{submission_id}.json"
+
+        try:
+            commit_json_to_github(
+                path=github_path,
+                payload=payload,
+                message=f"Add pending Spa 3H registration: {team_name}",
+            )
+            st.success("Registration submitted as pending.")
+            st.code(github_path)
+        except Exception as exc:
+            st.error("Registration could not be saved to GitHub.")
+            st.exception(exc)
