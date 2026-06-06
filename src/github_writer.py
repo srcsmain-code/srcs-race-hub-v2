@@ -47,6 +47,28 @@ def _contents_url(path: str) -> str:
     )
 
 
+def get_file_sha(path: str) -> str | None:
+    config = get_github_config()
+    url = _contents_url(path)
+
+    response = requests.get(
+        url,
+        headers=_headers(),
+        params={"ref": config["branch"]},
+        timeout=30,
+    )
+
+    if response.status_code == 404:
+        return None
+
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"GitHub SHA lookup failed: {response.status_code} — {response.text}"
+        )
+
+    return response.json().get("sha")
+
+
 def commit_json_to_github(path: str, payload: dict[str, Any], message: str) -> dict[str, Any]:
     if not github_configured():
         raise RuntimeError("GitHub is not configured. Check Streamlit secrets.")
@@ -57,11 +79,15 @@ def commit_json_to_github(path: str, payload: dict[str, Any], message: str) -> d
     json_text = json.dumps(payload, indent=2, ensure_ascii=False)
     encoded_content = base64.b64encode(json_text.encode("utf-8")).decode("utf-8")
 
-    data = {
+    data: dict[str, Any] = {
         "message": message,
         "content": encoded_content,
         "branch": config["branch"],
     }
+
+    existing_sha = get_file_sha(path)
+    if existing_sha:
+        data["sha"] = existing_sha
 
     response = requests.put(url, headers=_headers(), json=data, timeout=30)
 
@@ -129,10 +155,8 @@ def read_json_from_github(path: str) -> dict[str, Any]:
     return json.loads(decoded)
 
 
-def list_pending_spa_3h_registrations() -> list[dict[str, Any]]:
-    directory_path = "data/registrations/pending/spa_3h_endurance"
-    files = list_github_directory(directory_path)
-
+def list_registration_files(folder: str) -> list[dict[str, Any]]:
+    files = list_github_directory(folder)
     registrations: list[dict[str, Any]] = []
 
     for file_info in files:
@@ -153,3 +177,57 @@ def list_pending_spa_3h_registrations() -> list[dict[str, Any]]:
 
     registrations.sort(key=lambda item: item.get("submitted_at_utc", ""), reverse=True)
     return registrations
+
+
+def list_pending_spa_3h_registrations() -> list[dict[str, Any]]:
+    return list_registration_files("data/registrations/pending/spa_3h_endurance")
+
+
+def list_approved_spa_3h_registrations() -> list[dict[str, Any]]:
+    return list_registration_files("data/registrations/approved/spa_3h_endurance")
+
+
+def list_rejected_spa_3h_registrations() -> list[dict[str, Any]]:
+    return list_registration_files("data/registrations/rejected/spa_3h_endurance")
+
+
+def update_registration_status(
+    registration: dict[str, Any],
+    status: str,
+    admin_note: str = "",
+) -> str:
+    if status not in {"approved", "rejected"}:
+        raise ValueError("Status must be approved or rejected.")
+
+    source_path = registration.get("_github_path", "")
+    if not source_path:
+        raise ValueError("Registration is missing _github_path.")
+
+    filename = source_path.split("/")[-1]
+
+    updated = dict(registration)
+    updated.pop("_github_path", None)
+    updated["status"] = status
+    updated["admin_note"] = admin_note
+
+    if status == "approved":
+        destination_path = f"data/registrations/approved/spa_3h_endurance/{filename}"
+    else:
+        destination_path = f"data/registrations/rejected/spa_3h_endurance/{filename}"
+
+    commit_json_to_github(
+        path=destination_path,
+        payload=updated,
+        message=f"Mark Spa 3H registration as {status}: {updated.get('team_name', filename)}",
+    )
+
+    source_updated = dict(updated)
+    source_updated["status"] = f"{status}_copied"
+
+    commit_json_to_github(
+        path=source_path,
+        payload=source_updated,
+        message=f"Update pending Spa 3H registration status: {updated.get('team_name', filename)}",
+    )
+
+    return destination_path
