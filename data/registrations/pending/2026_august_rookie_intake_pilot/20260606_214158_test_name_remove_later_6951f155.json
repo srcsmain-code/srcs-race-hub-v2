@@ -16,5 +16,9 @@
   "experience": "Never raced before",
   "source": "Race Square email",
   "notes": "",
-  "consent": true
+  "consent": true,
+  "lead_status": "contacted",
+  "contact_status": "message_sent",
+  "follow_up_priority": "normal",
+  "admin_note": "This is an admin note #1"
 }
