@@ -187,7 +187,6 @@ def render_lead_form(event: dict[str, Any]) -> tuple[bool, dict[str, Any] | None
             "Zwolle",
             "Amsterdam",
             "Eindhoven",
-            "Kerkrade",
             "No preference yet",
         ],
     )
