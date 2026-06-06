@@ -155,8 +155,14 @@ def read_json_from_github(path: str) -> dict[str, Any]:
     return json.loads(decoded)
 
 
-def list_registration_files(folder: str) -> list[dict[str, Any]]:
+def registration_folder(event_id: str, status: str) -> str:
+    return f"data/registrations/{status}/{event_id}"
+
+
+def list_registration_files(event_id: str, status: str) -> list[dict[str, Any]]:
+    folder = registration_folder(event_id, status)
     files = list_github_directory(folder)
+
     registrations: list[dict[str, Any]] = []
 
     for file_info in files:
@@ -179,19 +185,15 @@ def list_registration_files(folder: str) -> list[dict[str, Any]]:
     return registrations
 
 
-def list_pending_spa_3h_registrations() -> list[dict[str, Any]]:
-    return list_registration_files("data/registrations/pending/spa_3h_endurance")
+def list_registrations(event_id: str, status: str) -> list[dict[str, Any]]:
+    if status not in {"pending", "approved", "rejected"}:
+        raise ValueError("Status must be pending, approved, or rejected.")
 
-
-def list_approved_spa_3h_registrations() -> list[dict[str, Any]]:
-    return list_registration_files("data/registrations/approved/spa_3h_endurance")
-
-
-def list_rejected_spa_3h_registrations() -> list[dict[str, Any]]:
-    return list_registration_files("data/registrations/rejected/spa_3h_endurance")
+    return list_registration_files(event_id, status)
 
 
 def update_registration_status(
+    event_id: str,
     registration: dict[str, Any],
     status: str,
     admin_note: str = "",
@@ -207,18 +209,16 @@ def update_registration_status(
 
     updated = dict(registration)
     updated.pop("_github_path", None)
+    updated["event_id"] = event_id
     updated["status"] = status
     updated["admin_note"] = admin_note
 
-    if status == "approved":
-        destination_path = f"data/registrations/approved/spa_3h_endurance/{filename}"
-    else:
-        destination_path = f"data/registrations/rejected/spa_3h_endurance/{filename}"
+    destination_path = f"{registration_folder(event_id, status)}/{filename}"
 
     commit_json_to_github(
         path=destination_path,
         payload=updated,
-        message=f"Mark Spa 3H registration as {status}: {updated.get('team_name', filename)}",
+        message=f"Mark registration as {status}: {updated.get('team_name', filename)}",
     )
 
     source_updated = dict(updated)
@@ -227,7 +227,20 @@ def update_registration_status(
     commit_json_to_github(
         path=source_path,
         payload=source_updated,
-        message=f"Update pending Spa 3H registration status: {updated.get('team_name', filename)}",
+        message=f"Update pending registration status: {updated.get('team_name', filename)}",
     )
 
     return destination_path
+
+
+# Backwards-compatible helpers while we migrate older views.
+def list_pending_spa_3h_registrations() -> list[dict[str, Any]]:
+    return list_registrations("2026_spa_3h_endurance", "pending")
+
+
+def list_approved_spa_3h_registrations() -> list[dict[str, Any]]:
+    return list_registrations("2026_spa_3h_endurance", "approved")
+
+
+def list_rejected_spa_3h_registrations() -> list[dict[str, Any]]:
+    return list_registrations("2026_spa_3h_endurance", "rejected")

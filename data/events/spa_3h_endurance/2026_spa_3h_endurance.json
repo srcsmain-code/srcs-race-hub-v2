@@ -1,0 +1,16 @@
+{
+  "event_id": "2026_spa_3h_endurance",
+  "event_name": "The SRCS Spa 3-hour Endurance",
+  "event_short_name": "Spa 3H",
+  "category": "GT3",
+  "event_type": "endurance",
+  "series_id": null,
+  "venue": "Race Square",
+  "track": "Spa-Francorchamps",
+  "event_date": "2026-08-02",
+  "registration_open": true,
+  "registration_type": "team_2_driver",
+  "cars": ["Porsche", "Mercedes", "Lamborghini", "Ferrari"],
+  "public_visible": true,
+  "description": "A 3-hour SRCS GT3 endurance event with two drivers per team."
+}

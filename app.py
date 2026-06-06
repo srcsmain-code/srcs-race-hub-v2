@@ -44,7 +44,7 @@ def admin_login_box() -> None:
 
 def get_url_mode() -> str:
     mode = st.query_params.get("mode", "public")
-    allowed_modes = {"public", "register_spa_3h", "admin"}
+    allowed_modes = {"public", "register_spa_3h", "admin", "event"}
     return mode if mode in allowed_modes else "public"
 
 
@@ -101,6 +101,8 @@ mode = get_url_mode()
 
 if mode == "register_spa_3h":
     render_registration_only_mode()
+elif mode == "event":
+    render_spa_3h_endurance()
 elif mode == "admin":
     render_admin_mode()
 else:

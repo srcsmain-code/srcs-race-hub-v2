@@ -4,26 +4,49 @@ from datetime import datetime, timezone
 
 import streamlit as st
 
-from config.constants import ENDURANCE_CAR_CHOICES
-from src.github_writer import github_configured, commit_json_to_github
+from src.events import load_event
+from src.github_writer import commit_json_to_github, github_configured, registration_folder
 from src.registrations import build_submission_id
 from src.ui_components import show_header
 from src.validation import is_valid_email, required_fields_present
 
 
+DEFAULT_EVENT_ID = "2026_spa_3h_endurance"
+
+
+def get_event_id() -> str:
+    return st.query_params.get("event_id", DEFAULT_EVENT_ID)
+
+
 def render() -> None:
-    show_header("Register for The SRCS Spa 3-hour Endurance", "Creates a pending registration submission")
+    event_id = get_event_id()
+    event = load_event(event_id)
+
+    event_name = event.get("event_name", "SRCS Event")
+    event_short_name = event.get("event_short_name", event_name)
+    cars = event.get("cars", [])
+
+    show_header(f"Register for {event_name}", "Creates a pending registration submission")
+
+    if not event.get("registration_open", False):
+        st.warning("Registration for this event is currently closed.")
+        return
 
     if github_configured():
         st.success("Registration storage is connected to GitHub.")
     else:
         st.warning("GitHub storage is not configured yet. Add Streamlit secrets before accepting live registrations.")
 
-    with st.form("spa_3h_registration"):
+    with st.form(f"{event_id}_registration"):
         st.subheader("Team details")
         team_name = st.text_input("Team name")
-        car_choice = st.selectbox("Preferred car", ENDURANCE_CAR_CHOICES)
-        backup_car_choice = st.selectbox("Backup car", ENDURANCE_CAR_CHOICES)
+
+        if cars:
+            car_choice = st.selectbox("Preferred car", cars)
+            backup_car_choice = st.selectbox("Backup car", cars)
+        else:
+            car_choice = st.text_input("Preferred car / class")
+            backup_car_choice = st.text_input("Backup car / class")
 
         st.subheader("Driver 1 / Team captain")
         driver_1_name = st.text_input("Driver 1 full name")
@@ -37,7 +60,7 @@ def render() -> None:
 
         experience = st.selectbox("Team experience level", ["New", "Casual", "Intermediate", "Fast", "Alien"])
         notes = st.text_area("Notes / requests")
-        consent = st.checkbox("I confirm SRCS may contact us about this event and registration.")
+        consent = st.checkbox(f"I confirm SRCS may contact us about {event_short_name} and this registration.")
 
         submitted = st.form_submit_button("Submit registration")
 
@@ -48,7 +71,11 @@ def render() -> None:
             "submission_id": submission_id,
             "submitted_at_utc": datetime.now(timezone.utc).isoformat(),
             "status": "pending",
-            "event_id": "spa_3h_endurance_2026",
+            "event_id": event_id,
+            "event_name": event_name,
+            "category": event.get("category", ""),
+            "event_type": event.get("event_type", ""),
+            "registration_type": event.get("registration_type", ""),
             "team_name": team_name,
             "car_choice": car_choice,
             "backup_car_choice": backup_car_choice,
@@ -75,13 +102,13 @@ def render() -> None:
         elif not github_configured():
             st.error("GitHub storage is not configured. Please check Streamlit secrets.")
         else:
-            github_path = f"data/registrations/pending/spa_3h_endurance/{submission_id}.json"
+            github_path = f"{registration_folder(event_id, 'pending')}/{submission_id}.json"
 
             try:
                 commit_json_to_github(
                     path=github_path,
                     payload=payload,
-                    message=f"Add pending Spa 3H registration: {team_name}",
+                    message=f"Add pending registration for {event_short_name}: {team_name}",
                 )
                 st.success("Registration submitted as pending.")
                 st.code(github_path)

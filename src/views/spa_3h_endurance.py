@@ -3,11 +3,15 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from src.github_writer import github_configured, list_approved_spa_3h_registrations
+from src.events import load_event
+from src.github_writer import github_configured, list_registrations
 from src.ui_components import show_header
 
 
-def render_confirmed_entries() -> None:
+DEFAULT_EVENT_ID = "2026_spa_3h_endurance"
+
+
+def render_confirmed_entries(event_id: str) -> None:
     st.subheader("Confirmed entries")
 
     if not github_configured():
@@ -15,7 +19,7 @@ def render_confirmed_entries() -> None:
         return
 
     try:
-        approved = list_approved_spa_3h_registrations()
+        approved = list_registrations(event_id, "approved")
     except Exception:
         st.warning("Confirmed entries could not be loaded right now.")
         return
@@ -48,37 +52,57 @@ def render_confirmed_entries() -> None:
 
 
 def render() -> None:
-    show_header("The SRCS Spa 3-hour Endurance", "GT3 team endurance event")
+    event_id = st.query_params.get("event_id", DEFAULT_EVENT_ID)
+    event = load_event(event_id)
+
+    show_header(event.get("event_name", "SRCS Event"), event.get("description", ""))
 
     st.markdown(
-        """
-        **Format**
+        f"""
+        **Event information**
 
-        - 2 drivers per team/car
-        - Cars: Porsche, Mercedes, Lamborghini, Ferrari
-        - Tire wear: On
-        - Pitstops: On
-        - Collision: On
-        - Penalties: On
-        - Damage: On
-        - Race duration: 3 hours
-        - 24h setting: day-night-day
-        - Track: Spa-Francorchamps
-
-        Registration is handled through the Spa 3H registration form.
+        - Category: {event.get("category", "")}
+        - Type: {event.get("event_type", "")}
+        - Track: {event.get("track", "")}
+        - Venue: {event.get("venue", "")}
+        - Date: {event.get("event_date", "")}
+        - Registration open: {event.get("registration_open", False)}
         """
     )
 
+    if event.get("event_id") == "2026_spa_3h_endurance":
+        st.markdown(
+            """
+            **Format**
+
+            - 2 drivers per team/car
+            - Cars: Porsche, Mercedes, Lamborghini, Ferrari
+            - Tire wear: On
+            - Pitstops: On
+            - Collision: On
+            - Penalties: On
+            - Damage: On
+            - Race duration: 3 hours
+            - 24h setting: day-night-day
+            - Track: Spa-Francorchamps
+            """
+        )
+
     st.divider()
-    render_confirmed_entries()
+    render_confirmed_entries(event_id)
 
     st.divider()
     st.subheader("Registration")
 
-    st.markdown(
-        """
-        Teams can register through the dedicated Spa 3H registration form.
+    if event.get("registration_open", False):
+        st.markdown(
+            f"""
+            Registration is open for this event.
 
-        After submission, the entry is reviewed by SRCS admin before being added to the confirmed entry list.
-        """
-    )
+            Use registration mode with:
+
+            `?mode=register_spa_3h&event_id={event_id}`
+            """
+        )
+    else:
+        st.info("Registration is currently closed for this event.")

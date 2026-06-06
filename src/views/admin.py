@@ -3,11 +3,10 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from src.events import get_event_label, list_events
 from src.github_writer import (
     github_configured,
-    list_approved_spa_3h_registrations,
-    list_pending_spa_3h_registrations,
-    list_rejected_spa_3h_registrations,
+    list_registrations,
     update_registration_status,
 )
 from src.ui_components import show_header
@@ -20,6 +19,7 @@ def registrations_to_dataframe(registrations: list[dict]) -> pd.DataFrame:
         table_rows.append(
             {
                 "Submitted UTC": item.get("submitted_at_utc", ""),
+                "Event": item.get("event_name", item.get("event_id", "")),
                 "Team": item.get("team_name", ""),
                 "Preferred Car": item.get("car_choice", ""),
                 "Backup Car": item.get("backup_car_choice", ""),
@@ -42,7 +42,8 @@ def render_registration_details(selected: dict) -> None:
     left, right = st.columns(2)
 
     with left:
-        st.markdown("### Team")
+        st.markdown("### Team / Entry")
+        st.write(f"**Event:** {selected.get('event_name', selected.get('event_id', ''))}")
         st.write(f"**Team:** {selected.get('team_name', '')}")
         st.write(f"**Preferred car:** {selected.get('car_choice', '')}")
         st.write(f"**Backup car:** {selected.get('backup_car_choice', '')}")
@@ -77,7 +78,6 @@ def render_registration_table(title: str, registrations: list[dict], filename: s
         return
 
     df = registrations_to_dataframe(registrations)
-
     st.dataframe(df, use_container_width=True, hide_index=True)
 
     st.download_button(
@@ -89,29 +89,52 @@ def render_registration_table(title: str, registrations: list[dict], filename: s
 
 
 def render() -> None:
-    show_header("Race Hub Admin", "Pending submissions and operational review")
+    show_header("Race Hub Admin", "Event registrations and operational review")
 
     if not github_configured():
         st.error("GitHub storage is not configured. Check Streamlit secrets.")
         st.stop()
 
+    events = list_events()
+
+    if not events:
+        st.error("No event configs found in data/events.")
+        st.stop()
+
+    event_label_map = {
+        get_event_label(event): event
+        for event in events
+    }
+
+    selected_event_label = st.selectbox(
+        "Select event",
+        list(event_label_map.keys()),
+    )
+
+    selected_event = event_label_map[selected_event_label]
+    event_id = selected_event["event_id"]
+
+    st.caption(
+        f"Category: {selected_event.get('category', '')} | "
+        f"Type: {selected_event.get('event_type', '')} | "
+        f"Registration open: {selected_event.get('registration_open', False)}"
+    )
+
     tab_pending, tab_approved, tab_rejected, tab_notes = st.tabs(
         [
-            "Pending Spa 3H",
-            "Approved Spa 3H",
-            "Rejected Spa 3H",
+            "Pending",
+            "Approved",
+            "Rejected",
             "Admin Notes",
         ]
     )
 
     with tab_pending:
-        st.subheader("Pending Spa 3H registrations")
-
         if st.button("Refresh pending registrations"):
             st.rerun()
 
         try:
-            registrations = list_pending_spa_3h_registrations()
+            registrations = list_registrations(event_id, "pending")
         except Exception as exc:
             st.error("Could not load pending registrations from GitHub.")
             st.exception(exc)
@@ -128,7 +151,7 @@ def render() -> None:
         ]
 
         if not actionable:
-            st.info("No pending Spa 3H registrations awaiting review.")
+            st.info("No pending registrations awaiting review for this event.")
         else:
             df = registrations_to_dataframe(actionable)
             st.dataframe(df, use_container_width=True, hide_index=True)
@@ -136,7 +159,7 @@ def render() -> None:
             st.download_button(
                 label="Download pending registrations as CSV",
                 data=df.to_csv(index=False).encode("utf-8"),
-                file_name="spa_3h_pending_registrations.csv",
+                file_name=f"{event_id}_pending_registrations.csv",
                 mime="text/csv",
             )
 
@@ -159,7 +182,10 @@ def render() -> None:
             st.divider()
             st.subheader("Decision")
 
-            admin_note = st.text_area("Admin note", placeholder="Optional note, e.g. payment confirmed, contacted captain, duplicate entry, etc.")
+            admin_note = st.text_area(
+                "Admin note",
+                placeholder="Optional note, e.g. payment confirmed, contacted captain, duplicate entry, etc.",
+            )
 
             col_approve, col_reject = st.columns(2)
 
@@ -167,6 +193,7 @@ def render() -> None:
                 if st.button("Approve registration", type="primary"):
                     try:
                         destination = update_registration_status(
+                            event_id,
                             selected,
                             status="approved",
                             admin_note=admin_note,
@@ -182,6 +209,7 @@ def render() -> None:
                 if st.button("Reject registration"):
                     try:
                         destination = update_registration_status(
+                            event_id,
                             selected,
                             status="rejected",
                             admin_note=admin_note,
@@ -200,30 +228,30 @@ def render() -> None:
 
     with tab_approved:
         try:
-            approved = list_approved_spa_3h_registrations()
+            approved = list_registrations(event_id, "approved")
         except Exception as exc:
             st.error("Could not load approved registrations from GitHub.")
             st.exception(exc)
             st.stop()
 
         render_registration_table(
-            "Approved Spa 3H registrations",
+            "Approved registrations",
             approved,
-            "spa_3h_approved_registrations.csv",
+            f"{event_id}_approved_registrations.csv",
         )
 
     with tab_rejected:
         try:
-            rejected = list_rejected_spa_3h_registrations()
+            rejected = list_registrations(event_id, "rejected")
         except Exception as exc:
             st.error("Could not load rejected registrations from GitHub.")
             st.exception(exc)
             st.stop()
 
         render_registration_table(
-            "Rejected Spa 3H registrations",
+            "Rejected registrations",
             rejected,
-            "spa_3h_rejected_registrations.csv",
+            f"{event_id}_rejected_registrations.csv",
         )
 
     with tab_notes:
@@ -232,10 +260,10 @@ def render() -> None:
             """
             Next admin upgrades:
 
-            1. Show approved teams publicly on the Spa 3H event page.
+            1. Add event-specific form types.
             2. Add payment status tracking.
             3. Add contact status tracking.
             4. Add edit registration functionality.
-            5. Add true archive/move behaviour for processed pending files.
+            5. Add championship attendance confirmation forms.
             """
         )
