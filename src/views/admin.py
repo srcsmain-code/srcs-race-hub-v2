@@ -483,7 +483,7 @@ def render() -> None:
             approved,
             f"{event_id}_approved_registrations.csv",
             registration_type,
-
+    )
     if registration_type == "lead_form" and approved:
         st.divider()
         st.subheader("Update approved lead")
@@ -500,9 +500,9 @@ def render() -> None:
     )
 
         approved_selected = approved_label_map[approved_selected_label]
-            render_registration_details(approved_selected, registration_type)
-            render_lead_follow_up_editor(approved_selected)
-        )
+        render_registration_details(approved_selected, registration_type)
+        render_lead_follow_up_editor(approved_selected)
+        
 
     with tab_rejected:
         try:
@@ -517,7 +517,7 @@ def render() -> None:
             rejected,
             f"{event_id}_rejected_registrations.csv",
             registration_type,
-    
+        )
     if registration_type == "lead_form" and rejected:
         st.divider()
         st.subheader("Update rejected lead")
@@ -533,10 +533,10 @@ def render() -> None:
             key="rejected_lead_selector",
     )
 
-    rejected_selected = rejected_label_map[rejected_selected_label]
-    render_registration_details(rejected_selected, registration_type)
-    render_lead_follow_up_editor(rejected_selected)
-        )
+        rejected_selected = rejected_label_map[rejected_selected_label]
+        render_registration_details(rejected_selected, registration_type)
+        render_lead_follow_up_editor(rejected_selected)
+        
 
     with tab_notes:
         st.subheader("Admin roadmap")
