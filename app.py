@@ -5,7 +5,7 @@ import streamlit as st
 from src.views.home import render as render_home
 from src.views.season_2026 import render as render_season_2026
 from src.views.standings import render as render_standings
-from src.views.spa_3h_endurance import render as render_spa_3h_endurance
+from src.views.register_event import render as render_register_event
 from src.views.register_spa_3h import render as render_register_spa_3h
 from src.views.rookie_intake import render as render_rookie_intake
 from src.views.admin import render as render_admin
@@ -44,12 +44,12 @@ def admin_login_box() -> None:
 
 def get_url_mode() -> str:
     mode = st.query_params.get("mode", "public")
-    allowed_modes = {"public", "register_spa_3h", "admin", "event"}
+    allowed_modes = {"public", "register", "register_spa_3h", "admin", "event"}
     return mode if mode in allowed_modes else "public"
 
 
 def render_registration_only_mode() -> None:
-    render_register_spa_3h()
+    render_register_event()
 
 
 def render_admin_mode() -> None:
@@ -62,7 +62,7 @@ def render_admin_mode() -> None:
 
     admin_pages = {
         "Admin Dashboard": render_admin,
-        "Spa 3H Registration Form": render_register_spa_3h,
+        "Event Registration Form": render_register_event,
         "Spa 3H Event Page": render_spa_3h_endurance,
         "Rookie Intake": render_rookie_intake,
         "Standings": render_standings,
@@ -75,12 +75,12 @@ def render_admin_mode() -> None:
 
 
 def render_public_mode() -> None:
-    public_pages = {
+    public_pages = {mv src/views/register_spa_3h.py src/views/register_event.py
         "Home": render_home,
         "Season 2026": render_season_2026,
         "Standings": render_standings,
         "Spa 3H Endurance": render_spa_3h_endurance,
-        "Register Spa 3H": render_register_spa_3h,
+        "Register Event": render_register_event,
         "Rookie Intake": render_rookie_intake,
     }
 
@@ -99,7 +99,7 @@ def render_public_mode() -> None:
 
 mode = get_url_mode()
 
-if mode == "register_spa_3h":
+if mode in {"register", "register_spa_3h"}:
     render_registration_only_mode()
 elif mode == "event":
     render_spa_3h_endurance()

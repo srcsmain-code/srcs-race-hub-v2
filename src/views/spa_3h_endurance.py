@@ -101,7 +101,7 @@ def render() -> None:
 
             Use registration mode with:
 
-            `?mode=register_spa_3h&event_id={event_id}`
+            `?mode=register&event_id={event_id}`
             """
         )
     else:
