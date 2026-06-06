@@ -232,7 +232,28 @@ def update_registration_status(
 
     return destination_path
 
+def update_registration_file(
+    registration: dict[str, Any],
+    updates: dict[str, Any],
+    message: str,
+) -> str:
+    source_path = registration.get("_github_path", "")
 
+    if not source_path:
+        raise ValueError("Registration is missing _github_path.")
+
+    updated = dict(registration)
+    updated.pop("_github_path", None)
+    updated.update(updates)
+
+    commit_json_to_github(
+        path=source_path,
+        payload=updated,
+        message=message,
+    )
+
+    return source_path
+    
 # Backwards-compatible helpers while we migrate older views.
 def list_pending_spa_3h_registrations() -> list[dict[str, Any]]:
     return list_registrations("2026_spa_3h_endurance", "pending")

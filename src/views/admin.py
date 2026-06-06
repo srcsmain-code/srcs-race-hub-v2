@@ -7,6 +7,7 @@ from src.events import get_event_label, list_events
 from src.github_writer import (
     github_configured,
     list_registrations,
+    update_registration_file,
     update_registration_status,
 )
 from src.ui_components import show_header
@@ -75,6 +76,9 @@ def lead_form_rows(registrations: list[dict]) -> list[dict]:
                 "Interest": item.get("interest", ""),
                 "Experience": item.get("experience", ""),
                 "Source": item.get("source", ""),
+                "Lead Status": item.get("lead_status", "new"),
+                "Contact Status": item.get("contact_status", "not_contacted"),
+                "Follow-up Priority": item.get("follow_up_priority", "normal"),
                 "Status": item.get("status", ""),
                 "GitHub Path": item.get("_github_path", ""),
             }
@@ -181,7 +185,12 @@ def render_lead_form_details(selected: dict) -> None:
         st.write(f"**Interest:** {selected.get('interest', '')}")
         st.write(f"**Experience:** {selected.get('experience', '')}")
         st.write(f"**Source:** {selected.get('source', '')}")
-        st.write(f"**Status:** {selected.get('status', '')}")
+
+    st.markdown("### Lead follow-up")
+    st.write(f"**Lead status:** {selected.get('lead_status', 'new')}")
+    st.write(f"**Contact status:** {selected.get('contact_status', 'not_contacted')}")
+    st.write(f"**Follow-up priority:** {selected.get('follow_up_priority', 'normal')}")
+    st.write(f"**Registration status:** {selected.get('status', '')}")
 
 
 def render_registration_details(selected: dict, registration_type: str) -> None:
@@ -227,6 +236,96 @@ def render_registration_table(
         mime="text/csv",
     )
 
+def get_option_index(options: list[str], current_value: str, default_value: str) -> int:
+    value = current_value or default_value
+
+    if value in options:
+        return options.index(value)
+
+    return options.index(default_value)
+
+
+def render_lead_follow_up_editor(selected: dict) -> None:
+    st.divider()
+    st.subheader("Lead follow-up")
+
+    lead_status_options = [
+        "new",
+        "contacted",
+        "interested",
+        "not_interested",
+        "converted",
+        "no_response",
+    ]
+
+    contact_status_options = [
+        "not_contacted",
+        "message_sent",
+        "called",
+        "responded",
+        "follow_up_needed",
+        "closed",
+    ]
+
+    priority_options = [
+        "low",
+        "normal",
+        "high",
+        "urgent",
+    ]
+
+    current_lead_status = selected.get("lead_status", "new")
+    current_contact_status = selected.get("contact_status", "not_contacted")
+    current_priority = selected.get("follow_up_priority", "normal")
+    current_admin_note = selected.get("admin_note", "")
+
+    col_status, col_contact, col_priority = st.columns(3)
+
+    with col_status:
+        lead_status = st.selectbox(
+            "Lead status",
+            lead_status_options,
+            index=get_option_index(lead_status_options, current_lead_status, "new"),
+        )
+
+    with col_contact:
+        contact_status = st.selectbox(
+            "Contact status",
+            contact_status_options,
+            index=get_option_index(contact_status_options, current_contact_status, "not_contacted"),
+        )
+
+    with col_priority:
+        follow_up_priority = st.selectbox(
+            "Follow-up priority",
+            priority_options,
+            index=get_option_index(priority_options, current_priority, "normal"),
+        )
+
+    updated_admin_note = st.text_area(
+        "Admin note",
+        value=current_admin_note,
+        placeholder="Add contact notes, follow-up reminders, conversion notes, etc.",
+    )
+
+    if st.button("Save lead follow-up"):
+        try:
+            source_path = update_registration_file(
+                selected,
+                updates={
+                    "lead_status": lead_status,
+                    "contact_status": contact_status,
+                    "follow_up_priority": follow_up_priority,
+                    "admin_note": updated_admin_note,
+                },
+                message=f"Update lead follow-up: {selected.get('name', selected.get('submission_id', 'lead'))}",
+            )
+            st.success("Lead follow-up updated.")
+            st.code(source_path)
+            st.rerun()
+        except Exception as exc:
+            st.error("Could not update lead follow-up.")
+            st.exception(exc)
 
 def render() -> None:
     show_header("Race Hub Admin", "Event registrations and operational review")
@@ -321,6 +420,9 @@ def render() -> None:
             selected = selected_label_map[selected_label]
             render_registration_details(selected, registration_type)
 
+            if registration_type == "lead_form":
+                render_lead_follow_up_editor(selected)
+
             st.divider()
             st.subheader("Decision")
 
@@ -381,6 +483,25 @@ def render() -> None:
             approved,
             f"{event_id}_approved_registrations.csv",
             registration_type,
+
+    if registration_type == "lead_form" and approved:
+        st.divider()
+        st.subheader("Update approved lead")
+
+        approved_label_map = {
+          get_registration_label(item, registration_type): item
+          for item in approved
+    }
+
+        approved_selected_label = st.selectbox(
+            "Select approved lead",
+            list(approved_label_map.keys()),
+            key="approved_lead_selector",
+    )
+
+        approved_selected = approved_label_map[approved_selected_label]
+            render_registration_details(approved_selected, registration_type)
+            render_lead_follow_up_editor(approved_selected)
         )
 
     with tab_rejected:
@@ -396,6 +517,25 @@ def render() -> None:
             rejected,
             f"{event_id}_rejected_registrations.csv",
             registration_type,
+    
+    if registration_type == "lead_form" and rejected:
+        st.divider()
+        st.subheader("Update rejected lead")
+
+        rejected_label_map = {
+            get_registration_label(item, registration_type): item
+            for item in rejected
+    }
+
+        rejected_selected_label = st.selectbox(
+            "Select rejected lead",
+            list(rejected_label_map.keys()),
+            key="rejected_lead_selector",
+    )
+
+    rejected_selected = rejected_label_map[rejected_selected_label]
+    render_registration_details(rejected_selected, registration_type)
+    render_lead_follow_up_editor(rejected_selected)
         )
 
     with tab_notes:
