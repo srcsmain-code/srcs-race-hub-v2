@@ -1,7 +1,7 @@
 {
   "submission_id": "20260605_140132_test_team_delete_me_e83db0a6",
   "submitted_at_utc": "2026-06-05T14:01:32.156956+00:00",
-  "status": "pending",
+  "status": "approved_copied",
   "event_id": "spa_3h_endurance_2026",
   "team_name": "Test Team Delete Me",
   "car_choice": "Porsche",
@@ -14,5 +14,6 @@
   "driver_2_phone": "06222222222",
   "experience": "Casual",
   "notes": "This is a test registration. Delete after testing.\nConsent: ticked",
-  "consent": true
+  "consent": true,
+  "admin_note": "Test approval - can delete later."
 }
