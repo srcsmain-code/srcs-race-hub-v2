@@ -1,0 +1,40 @@
+{
+  "event_id": "2026_august_rookie_intake_pilot",
+  "event_name": "SRCS August Rookie Intake / Lead Generation Pilot",
+  "event_short_name": "August Rookie Intake",
+  "category": "Rookie",
+  "event_type": "lead_generation",
+  "series_id": null,
+  "venue": "Race Square",
+  "track": "Spa-Francorchamps",
+  "event_date": "2026-08-02",
+  "registration_open": true,
+  "registration_type": "lead_form",
+  "venue_options": [
+    "Utrecht",
+    "Rotterdam",
+    "Zandvoort",
+    "Zwolle",
+    "Amsterdam",
+    "Eindhoven",
+    "Kerkrade",
+    "No preference yet"
+  ],
+  "interest_options": [
+    "F1",
+    "GT3",
+    "Both F1 and GT3",
+    "Not sure yet"
+  ],
+  "source_options": [
+    "Race Square email",
+    "Race Square venue / narrowcasting",
+    "QR code",
+    "WhatsApp",
+    "Friend / referral",
+    "Social media",
+    "Other"
+  ],
+  "public_visible": true,
+  "description": "A joint SRCS / Race Square lead generation and Rookie intake pilot connected to the August Spa race day."
+}
