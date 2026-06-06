@@ -6,7 +6,6 @@ from src.views.home import render as render_home
 from src.views.season_2026 import render as render_season_2026
 from src.views.standings import render as render_standings
 from src.views.register_event import render as render_register_event
-from src.views.register_spa_3h import render as render_register_spa_3h
 from src.views.rookie_intake import render as render_rookie_intake
 from src.views.admin import render as render_admin
 
