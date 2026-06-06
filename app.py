@@ -75,7 +75,7 @@ def render_admin_mode() -> None:
 
 
 def render_public_mode() -> None:
-    public_pages = {mv src/views/register_spa_3h.py src/views/register_event.py
+    public_pages = {
         "Home": render_home,
         "Season 2026": render_season_2026,
         "Standings": render_standings,
