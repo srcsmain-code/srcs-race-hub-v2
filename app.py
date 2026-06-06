@@ -62,7 +62,8 @@ def render_admin_mode() -> None:
     admin_pages = {
         "Admin Dashboard": render_admin,
         "Event Registration Form": render_register_event,
-        "Spa 3H Event Page": render_spa_3h_endurance,
+        "Events": render_events,
+        "Event Detail": render_event_detail,
         "Rookie Intake": render_rookie_intake,
         "Standings": render_standings,
     }
@@ -78,7 +79,7 @@ def render_public_mode() -> None:
         "Home": render_home,
         "Season 2026": render_season_2026,
         "Standings": render_standings,
-        "Spa 3H Endurance": render_spa_3h_endurance,
+        "Events": render_events,
         "Register Event": render_register_event,
         "Rookie Intake": render_rookie_intake,
     }
@@ -101,7 +102,7 @@ mode = get_url_mode()
 if mode in {"register", "register_spa_3h"}:
     render_registration_only_mode()
 elif mode == "event":
-    render_spa_3h_endurance()
+    render_event_detail()
 elif mode == "admin":
     render_admin_mode()
 else:
