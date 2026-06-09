@@ -22,8 +22,8 @@ def event_entries_folder(event_id: str) -> str:
     return f"data/event_entries/{event_id}"
 
 
-def build_entry_id(driver_name: str, entry_type: str = "regular") -> str:
-    base = slugify(driver_name)
+def build_entry_id(name: str, entry_type: str = "regular") -> str:
+    base = slugify(name)
     if entry_type == "reserve":
         return f"reserve_{base}"
     return base
@@ -60,6 +60,7 @@ def list_event_entries(event_id: str) -> list[dict[str, Any]]:
             item.get("entry_type", ""),
             item.get("team_name", ""),
             item.get("driver_name", ""),
+            item.get("driver_1_name", ""),
         )
     )
 
@@ -68,7 +69,7 @@ def list_event_entries(event_id: str) -> list[dict[str, Any]]:
 
 def save_event_entry(event_id: str, entry: dict[str, Any]) -> str:
     entry_id = entry.get("entry_id") or build_entry_id(
-        entry.get("driver_name", ""),
+        entry.get("team_name") or entry.get("driver_name") or "entry",
         entry.get("entry_type", "regular"),
     )
 
@@ -81,13 +82,13 @@ def save_event_entry(event_id: str, entry: dict[str, Any]) -> str:
     commit_json_to_github(
         path=path,
         payload=entry,
-        message=f"Save event entry: {entry.get('driver_name', entry_id)}",
+        message=f"Save event entry: {entry.get('team_name') or entry.get('driver_name') or entry_id}",
     )
 
     return path
 
 
-def create_event_entry(
+def create_single_driver_event_entry(
     event_id: str,
     driver_name: str,
     team_name: str,
@@ -103,10 +104,50 @@ def create_event_entry(
     entry = {
         "entry_id": entry_id,
         "event_id": event_id,
+        "entry_format": "single_driver",
         "driver_name": driver_name,
         "team_name": team_name,
         "entry_type": entry_type,
         "attendance_status": attendance_status,
+        "payment_status": payment_status,
+        "reserve_status": reserve_status,
+        "grid_status": grid_status,
+        "notes": notes,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return save_event_entry(event_id, entry)
+
+
+def create_team_2_driver_event_entry(
+    event_id: str,
+    team_name: str,
+    car_choice: str,
+    backup_car_choice: str,
+    driver_1_name: str,
+    driver_1_attendance_status: str,
+    driver_2_name: str,
+    driver_2_attendance_status: str,
+    entry_type: str,
+    payment_status: str,
+    reserve_status: str,
+    grid_status: str,
+    notes: str,
+) -> str:
+    entry_id = build_entry_id(team_name, entry_type)
+
+    entry = {
+        "entry_id": entry_id,
+        "event_id": event_id,
+        "entry_format": "team_2_driver",
+        "team_name": team_name,
+        "car_choice": car_choice,
+        "backup_car_choice": backup_car_choice,
+        "driver_1_name": driver_1_name,
+        "driver_1_attendance_status": driver_1_attendance_status,
+        "driver_2_name": driver_2_name,
+        "driver_2_attendance_status": driver_2_attendance_status,
+        "entry_type": entry_type,
         "payment_status": payment_status,
         "reserve_status": reserve_status,
         "grid_status": grid_status,
