@@ -1,0 +1,23 @@
+{
+  "submission_id": "20260609_183403_test_team_remove_later_200527b7",
+  "submitted_at_utc": "2026-06-09T18:34:03.924549+00:00",
+  "status": "pending",
+  "event_id": "2026_spa_3h_endurance",
+  "event_name": "The SRCS Spa 3-hour Endurance",
+  "category": "GT3",
+  "event_type": "endurance",
+  "registration_type": "team_2_driver",
+  "entry_type": "team",
+  "team_name": "Test Team - remove later",
+  "car_choice": "GT-M Aero V10 Evo2 – Audi",
+  "backup_car_choice": "GT-M Lanzo V10 Evo2 – Lamborghini",
+  "driver_1_name": "Test 1",
+  "driver_1_email": "tets@user.com",
+  "driver_1_phone": "133323",
+  "driver_2_name": "Test 2",
+  "driver_2_email": "test@user.com",
+  "driver_2_phone": "234234",
+  "experience": "Alien",
+  "notes": "",
+  "consent": true
+}
