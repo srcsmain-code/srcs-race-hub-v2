@@ -1,0 +1,21 @@
+{
+  "entry_id": "test_team_remove_later",
+  "event_id": "2026_spa_3h_endurance",
+  "entry_format": "team_2_driver",
+  "source_registration_id": "20260609_183403_test_team_remove_later_200527b7",
+  "source_registration_path": "data/registrations/approved/2026_spa_3h_endurance/20260609_183403_test_team_remove_later_200527b7.json",
+  "team_name": "Test Team - remove later",
+  "car_choice": "GT-M Aero V10 Evo2 – Audi",
+  "backup_car_choice": "GT-M Lanzo V10 Evo2 – Lamborghini",
+  "driver_1_name": "Test 1",
+  "driver_1_attendance_status": "expected",
+  "driver_2_name": "Test 2",
+  "driver_2_attendance_status": "expected",
+  "entry_type": "regular",
+  "payment_status": "pending",
+  "reserve_status": "not_applicable",
+  "grid_status": "not_assigned",
+  "notes": "",
+  "created_at_utc": "2026-06-09T18:58:19.334751+00:00",
+  "updated_at_utc": "2026-06-09T18:58:19.334783+00:00"
+}
