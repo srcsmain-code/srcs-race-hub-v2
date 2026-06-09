@@ -11,10 +11,12 @@
   "registration_open": true,
   "registration_type": "team_2_driver",
   "cars": [
-    "Porsche",
-    "Mercedes",
-    "Lamborghini",
-    "Ferrari"
+    "GT-M Aero V10 Evo2 – Audi",
+    "GT-M Akuro V6 Evo2 – Acura",
+    "GT-M Bayer V8 – BMW",
+    "GT-M Lanzo V10 Evo2 – Lamborghini",
+    "GT-M Lux V8 – Lexus",
+    "GT-M Mercer V8 – Mercedes"
   ],
   "public_visible": true,
   "description": "A 3-hour SRCS GT3 endurance event with two drivers per team."
