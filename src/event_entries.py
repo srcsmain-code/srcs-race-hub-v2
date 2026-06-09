@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import re
+from datetime import datetime, timezone
+from typing import Any
+
+from src.github_writer import (
+    commit_json_to_github,
+    list_github_directory,
+    read_json_from_github,
+)
+
+
+def slugify(value: str) -> str:
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "_", value)
+    value = value.strip("_")
+    return value or "entry"
+
+
+def event_entries_folder(event_id: str) -> str:
+    return f"data/event_entries/{event_id}"
+
+
+def build_entry_id(driver_name: str, entry_type: str = "regular") -> str:
+    base = slugify(driver_name)
+    if entry_type == "reserve":
+        return f"reserve_{base}"
+    return base
+
+
+def list_event_entries(event_id: str) -> list[dict[str, Any]]:
+    folder = event_entries_folder(event_id)
+
+    try:
+        files = list_github_directory(folder)
+    except Exception:
+        return []
+
+    entries: list[dict[str, Any]] = []
+
+    for file_info in files:
+        if file_info.get("type") != "file":
+            continue
+
+        name = file_info.get("name", "")
+        if not name.endswith(".json"):
+            continue
+
+        path = file_info.get("path", "")
+        if not path:
+            continue
+
+        payload = read_json_from_github(path)
+        payload["_github_path"] = path
+        entries.append(payload)
+
+    entries.sort(
+        key=lambda item: (
+            item.get("entry_type", ""),
+            item.get("team_name", ""),
+            item.get("driver_name", ""),
+        )
+    )
+
+    return entries
+
+
+def save_event_entry(event_id: str, entry: dict[str, Any]) -> str:
+    entry_id = entry.get("entry_id") or build_entry_id(
+        entry.get("driver_name", ""),
+        entry.get("entry_type", "regular"),
+    )
+
+    entry["entry_id"] = entry_id
+    entry["event_id"] = event_id
+    entry["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
+
+    path = f"{event_entries_folder(event_id)}/{entry_id}.json"
+
+    commit_json_to_github(
+        path=path,
+        payload=entry,
+        message=f"Save event entry: {entry.get('driver_name', entry_id)}",
+    )
+
+    return path
+
+
+def create_event_entry(
+    event_id: str,
+    driver_name: str,
+    team_name: str,
+    entry_type: str,
+    attendance_status: str,
+    payment_status: str,
+    reserve_status: str,
+    grid_status: str,
+    notes: str,
+) -> str:
+    entry_id = build_entry_id(driver_name, entry_type)
+
+    entry = {
+        "entry_id": entry_id,
+        "event_id": event_id,
+        "driver_name": driver_name,
+        "team_name": team_name,
+        "entry_type": entry_type,
+        "attendance_status": attendance_status,
+        "payment_status": payment_status,
+        "reserve_status": reserve_status,
+        "grid_status": grid_status,
+        "notes": notes,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return save_event_entry(event_id, entry)
+
+
+def update_event_entry(
+    event_id: str,
+    existing_entry: dict[str, Any],
+    updates: dict[str, Any],
+) -> str:
+    entry = dict(existing_entry)
+    entry.pop("_github_path", None)
+    entry.update(updates)
+
+    return save_event_entry(event_id, entry)

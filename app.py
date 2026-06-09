@@ -10,6 +10,7 @@ from src.views.events import render as render_events
 from src.views.register_event import render as render_register_event
 from src.views.rookie_intake import render as render_rookie_intake
 from src.views.admin import render as render_admin
+from src.views.admin_event_entries import render as render_admin_event_entries
 
 
 st.set_page_config(page_title="SRCS Race Hub v2", layout="wide")
@@ -63,6 +64,7 @@ def render_admin_mode() -> None:
 
     admin_pages = {
         "Admin Dashboard": render_admin,
+        "Event Entries": render_admin_event_entries,
         "Event Registration Form": render_register_event,
         "Events": render_events,
         "Event Detail": render_event_detail,
