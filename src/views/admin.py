@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from src.event_entries import create_team_2_driver_entry_from_registration
 from src.events import get_event_label, list_events
 from src.github_writer import (
     github_configured,
@@ -327,6 +328,34 @@ def render_lead_follow_up_editor(selected: dict) -> None:
             st.error("Could not update lead follow-up.")
             st.exception(exc)
 
+def render_create_event_entry_from_registration_button(
+    event_id: str,
+    selected: dict,
+    registration_type: str,
+) -> None:
+    if registration_type != "team_2_driver":
+        return
+
+    st.divider()
+    st.subheader("Event entry")
+
+    st.write(
+        "Create a two-driver Event Entry from this approved registration. "
+        "This will add the team to Admin Event Entries for attendance, payment and grid management."
+    )
+
+    if st.button("Create Event Entry from this registration"):
+        try:
+            path = create_team_2_driver_entry_from_registration(
+                event_id=event_id,
+                registration=selected,
+            )
+            st.success("Event Entry created.")
+            st.code(path)
+        except Exception as exc:
+            st.error("Could not create Event Entry from registration.")
+            st.exception(exc)
+
 def render() -> None:
     show_header("Race Hub Admin", "Event registrations and operational review")
 
@@ -484,24 +513,48 @@ def render() -> None:
             f"{event_id}_approved_registrations.csv",
             registration_type,
     )
-    if registration_type == "lead_form" and approved:
-        st.divider()
-        st.subheader("Update approved lead")
+        if registration_type == "team_2_driver" and approved:
+            st.divider()
+            st.subheader("Create Event Entry from approved registration")
 
-        approved_label_map = {
-          get_registration_label(item, registration_type): item
-          for item in approved
-    }
+            approved_entry_label_map = {
+                get_registration_label(item, registration_type): item
+                for item in approved
+            }
 
-        approved_selected_label = st.selectbox(
-            "Select approved lead",
-            list(approved_label_map.keys()),
-            key="approved_lead_selector",
-    )
+            approved_entry_label = st.selectbox(
+                "Select approved registration",
+                list(approved_entry_label_map.keys()),
+                key="approved_registration_to_event_entry_selector",
+            )
 
-        approved_selected = approved_label_map[approved_selected_label]
-        render_registration_details(approved_selected, registration_type)
-        render_lead_follow_up_editor(approved_selected)
+            approved_selected = approved_entry_label_map[approved_entry_label]
+
+            render_registration_details(approved_selected, registration_type)
+            render_create_event_entry_from_registration_button(
+                event_id,
+                approved_selected,
+                registration_type,
+            )
+        
+        if registration_type == "lead_form" and approved:
+            st.divider()
+            st.subheader("Update approved lead")
+
+            approved_label_map = {
+                get_registration_label(item, registration_type): item
+             for item in approved
+        }
+
+            approved_selected_label = st.selectbox(
+                "Select approved lead",
+                list(approved_label_map.keys()),
+                key="approved_lead_selector",
+        )
+
+            approved_selected = approved_label_map[approved_selected_label]
+            render_registration_details(approved_selected, registration_type)
+            render_lead_follow_up_editor(approved_selected)
         
 
     with tab_rejected:

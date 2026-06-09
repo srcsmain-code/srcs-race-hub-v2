@@ -168,3 +168,45 @@ def update_event_entry(
     entry.update(updates)
 
     return save_event_entry(event_id, entry)
+
+def create_team_2_driver_entry_from_registration(
+    event_id: str,
+    registration: dict[str, Any],
+) -> str:
+    team_name = registration.get("team_name", "")
+    car_choice = registration.get("car_choice", "")
+    backup_car_choice = registration.get("backup_car_choice", "")
+    driver_1_name = registration.get("driver_1_name", "")
+    driver_2_name = registration.get("driver_2_name", "")
+    notes = registration.get("notes", "")
+
+    if not team_name:
+        raise ValueError("Registration is missing team_name.")
+
+    if not driver_1_name or not driver_2_name:
+        raise ValueError("Registration is missing one or both driver names.")
+
+    entry_id = build_entry_id(team_name, "regular")
+
+    entry = {
+        "entry_id": entry_id,
+        "event_id": event_id,
+        "entry_format": "team_2_driver",
+        "source_registration_id": registration.get("submission_id", ""),
+        "source_registration_path": registration.get("_github_path", ""),
+        "team_name": team_name,
+        "car_choice": car_choice,
+        "backup_car_choice": backup_car_choice,
+        "driver_1_name": driver_1_name,
+        "driver_1_attendance_status": "expected",
+        "driver_2_name": driver_2_name,
+        "driver_2_attendance_status": "expected",
+        "entry_type": "regular",
+        "payment_status": "pending",
+        "reserve_status": "not_applicable",
+        "grid_status": "not_assigned",
+        "notes": notes,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return save_event_entry(event_id, entry)    
