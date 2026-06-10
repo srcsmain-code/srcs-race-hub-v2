@@ -3,7 +3,10 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from src.event_entries import create_team_2_driver_entry_from_registration
+from src.event_entries import (
+    create_team_2_driver_entry_from_registration,
+    list_event_entries,
+)
 from src.events import get_event_label, list_events
 from src.github_writer import (
     github_configured,
@@ -36,6 +39,7 @@ def team_2_driver_rows(registrations: list[dict]) -> list[dict]:
                 "Driver 2 Phone": item.get("driver_2_phone", ""),
                 "Experience": item.get("experience", ""),
                 "Status": item.get("status", ""),
+                "Event Entry Created": "Yes" if item.get("event_entry_created", False) else "No",
                 "GitHub Path": item.get("_github_path", ""),
             }
         )
@@ -339,6 +343,36 @@ def render_create_event_entry_from_registration_button(
     st.divider()
     st.subheader("Event entry")
 
+    if selected.get("event_entry_created", False):
+        st.success("Event Entry already created for this registration.")
+        return
+
+    st.write(
+        "Create a two-driver Event Entry from this approved registration. "
+        "This will add the team to Admin Event Entries for attendance, payment and grid management."
+    )
+
+    if st.button("Create Event Entry from this registration"):
+        try:
+            path = create_team_2_driver_entry_from_registration(
+                event_id=event_id,
+                registration=selected,
+            )
+            st.success("Event Entry created.")
+            st.code(path)
+            st.rerun()
+        except ValueError as exc:
+            st.warning(str(exc))
+        except Exception as exc:
+            st.error("Could not create Event Entry from registration.")
+            st.exception(exc)
+            
+    if registration_type != "team_2_driver":
+        return
+
+    st.divider()
+    st.subheader("Event entry")
+
     st.write(
         "Create a two-driver Event Entry from this approved registration. "
         "This will add the team to Admin Event Entries for attendance, payment and grid management."
@@ -358,6 +392,39 @@ def render_create_event_entry_from_registration_button(
         except Exception as exc:
             st.error("Could not create Event Entry from registration.")
             st.exception(exc)
+
+def registration_has_event_entry(
+    registration: dict,
+    event_entries: list[dict],
+) -> bool:
+    registration_id = registration.get("submission_id", "")
+    team_name = registration.get("team_name", "")
+
+    for entry in event_entries:
+        if registration_id and entry.get("source_registration_id") == registration_id:
+            return True
+
+        if team_name and entry.get("team_name") == team_name:
+            return True
+
+    return False
+
+
+def add_event_entry_created_flag(
+    registrations: list[dict],
+    event_entries: list[dict],
+) -> list[dict]:
+    enriched = []
+
+    for registration in registrations:
+        item = dict(registration)
+        item["event_entry_created"] = registration_has_event_entry(
+            registration,
+            event_entries,
+        )
+        enriched.append(item)
+
+    return enriched
 
 def render() -> None:
     show_header("Race Hub Admin", "Event registrations and operational review")
@@ -509,6 +576,11 @@ def render() -> None:
             st.error("Could not load approved registrations from GitHub.")
             st.exception(exc)
             st.stop()
+
+        event_entries = list_event_entries(event_id)
+
+        if registration_type == "team_2_driver":
+            approved = add_event_entry_created_flag(approved, event_entries)
 
         render_registration_table(
             "Approved registrations",
