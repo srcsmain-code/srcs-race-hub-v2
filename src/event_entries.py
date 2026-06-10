@@ -87,6 +87,96 @@ def save_event_entry(event_id: str, entry: dict[str, Any]) -> str:
 
     return path
 
+def get_standard_driver_entry_fee(event: dict | None = None) -> float:
+    if not event:
+        return 0.0
+
+    pricing = event.get("pricing", {})
+    return float(pricing.get("standard_driver_entry_fee", 0.0) or 0.0)
+
+
+def calculate_driver_amount_due(
+    standard_fee: float,
+    discount_amount: float,
+) -> float:
+    due = float(standard_fee or 0.0) - float(discount_amount or 0.0)
+    return max(due, 0.0)
+
+
+def calculate_payment_status(
+    amount_due: float,
+    amount_paid: float,
+) -> str:
+    amount_due = float(amount_due or 0.0)
+    amount_paid = float(amount_paid or 0.0)
+
+    if amount_due <= 0:
+        return "comped"
+
+    if amount_paid <= 0:
+        return "pending"
+
+    if amount_paid < amount_due:
+        return "part_paid"
+
+    return "paid"
+
+
+def calculate_team_payment_summary(entry: dict[str, Any]) -> dict[str, float | str]:
+    driver_1_standard_fee = float(entry.get("driver_1_standard_fee", 0.0) or 0.0)
+    driver_2_standard_fee = float(entry.get("driver_2_standard_fee", 0.0) or 0.0)
+
+    driver_1_discount_amount = float(entry.get("driver_1_discount_amount", 0.0) or 0.0)
+    driver_2_discount_amount = float(entry.get("driver_2_discount_amount", 0.0) or 0.0)
+
+    driver_1_amount_due = calculate_driver_amount_due(
+        driver_1_standard_fee,
+        driver_1_discount_amount,
+    )
+    driver_2_amount_due = calculate_driver_amount_due(
+        driver_2_standard_fee,
+        driver_2_discount_amount,
+    )
+
+    driver_1_amount_paid = float(entry.get("driver_1_amount_paid", 0.0) or 0.0)
+    driver_2_amount_paid = float(entry.get("driver_2_amount_paid", 0.0) or 0.0)
+
+    team_standard_fee = driver_1_standard_fee + driver_2_standard_fee
+    team_discount_amount = driver_1_discount_amount + driver_2_discount_amount
+    team_amount_due = driver_1_amount_due + driver_2_amount_due
+    team_amount_paid = driver_1_amount_paid + driver_2_amount_paid
+
+    if team_amount_due <= 0:
+        team_payment_status = "comped"
+    elif team_amount_paid <= 0:
+        team_payment_status = "pending"
+    elif team_amount_paid < team_amount_due:
+        team_payment_status = "part_paid"
+    else:
+        team_payment_status = "paid"
+
+    return {
+        "driver_1_amount_due": driver_1_amount_due,
+        "driver_2_amount_due": driver_2_amount_due,
+        "driver_1_payment_status": calculate_payment_status(
+            driver_1_amount_due,
+            driver_1_amount_paid,
+        ),
+        "driver_2_payment_status": calculate_payment_status(
+            driver_2_amount_due,
+            driver_2_amount_paid,
+        ),
+        "team_standard_fee": team_standard_fee,
+        "team_discount_amount": team_discount_amount,
+        "team_amount_due": team_amount_due,
+        "team_amount_paid": team_amount_paid,
+        "team_payment_status": team_payment_status,
+    }
+
+
+def apply_team_payment_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    entry.update(calculate_team_payment_summary(entry))
+    return entry
 
 def create_single_driver_event_entry(
     event_id: str,
@@ -129,12 +219,31 @@ def create_team_2_driver_event_entry(
     driver_2_name: str,
     driver_2_attendance_status: str,
     entry_type: str,
-    payment_status: str,
     reserve_status: str,
     grid_status: str,
     notes: str,
+    event: dict | None = None,
+    driver_1_email: str = "",
+    driver_1_phone: str = "",
+    driver_1_contact_status: str = "not_contacted",
+    driver_1_discount_amount: float = 0.0,
+    driver_1_discount_reason: str = "none",
+    driver_1_amount_paid: float = 0.0,
+    driver_1_payment_method: str = "",
+    driver_1_payment_note: str = "",
+    driver_2_email: str = "",
+    driver_2_phone: str = "",
+    driver_2_contact_status: str = "not_contacted",
+    driver_2_discount_amount: float = 0.0,
+    driver_2_discount_reason: str = "none",
+    driver_2_amount_paid: float = 0.0,
+    driver_2_payment_method: str = "",
+    driver_2_payment_note: str = "",
+    primary_contact_driver: str = "driver_1",
+    ready_status: str = "not_ready",
 ) -> str:
     entry_id = build_entry_id(team_name, entry_type)
+    standard_fee = get_standard_driver_entry_fee(event)
 
     entry = {
         "entry_id": entry_id,
@@ -143,17 +252,41 @@ def create_team_2_driver_event_entry(
         "team_name": team_name,
         "car_choice": car_choice,
         "backup_car_choice": backup_car_choice,
-        "driver_1_name": driver_1_name,
-        "driver_1_attendance_status": driver_1_attendance_status,
-        "driver_2_name": driver_2_name,
-        "driver_2_attendance_status": driver_2_attendance_status,
         "entry_type": entry_type,
-        "payment_status": payment_status,
         "reserve_status": reserve_status,
         "grid_status": grid_status,
+        "primary_contact_driver": primary_contact_driver,
+        "ready_status": ready_status,
+
+        "driver_1_name": driver_1_name,
+        "driver_1_attendance_status": driver_1_attendance_status,
+        "driver_1_email": driver_1_email,
+        "driver_1_phone": driver_1_phone,
+        "driver_1_contact_status": driver_1_contact_status,
+        "driver_1_standard_fee": standard_fee,
+        "driver_1_discount_amount": float(driver_1_discount_amount or 0.0),
+        "driver_1_discount_reason": driver_1_discount_reason,
+        "driver_1_amount_paid": float(driver_1_amount_paid or 0.0),
+        "driver_1_payment_method": driver_1_payment_method,
+        "driver_1_payment_note": driver_1_payment_note,
+
+        "driver_2_name": driver_2_name,
+        "driver_2_attendance_status": driver_2_attendance_status,
+        "driver_2_email": driver_2_email,
+        "driver_2_phone": driver_2_phone,
+        "driver_2_contact_status": driver_2_contact_status,
+        "driver_2_standard_fee": standard_fee,
+        "driver_2_discount_amount": float(driver_2_discount_amount or 0.0),
+        "driver_2_discount_reason": driver_2_discount_reason,
+        "driver_2_amount_paid": float(driver_2_amount_paid or 0.0),
+        "driver_2_payment_method": driver_2_payment_method,
+        "driver_2_payment_note": driver_2_payment_note,
+
         "notes": notes,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
     }
+
+    entry = apply_team_payment_summary(entry)
 
     return save_event_entry(event_id, entry)
 
@@ -212,6 +345,8 @@ def create_team_2_driver_entry_from_registration(
             "An Event Entry has already been created from this registration."
         )
 
+    standard_fee = get_standard_driver_entry_fee(event)
+
     entry = {
         "entry_id": entry_id,
         "event_id": event_id,
@@ -231,6 +366,30 @@ def create_team_2_driver_entry_from_registration(
         "grid_status": "not_assigned",
         "notes": notes,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
+                "primary_contact_driver": "driver_1",
+        "ready_status": "not_ready",
+
+        "driver_1_email": registration.get("driver_1_email", ""),
+        "driver_1_phone": registration.get("driver_1_phone", ""),
+        "driver_1_contact_status": "not_contacted",
+        "driver_1_standard_fee": standard_fee,
+        "driver_1_discount_amount": 0.0,
+        "driver_1_discount_reason": "none",
+        "driver_1_amount_paid": 0.0,
+        "driver_1_payment_method": "",
+        "driver_1_payment_note": "",
+
+        "driver_2_email": registration.get("driver_2_email", ""),
+        "driver_2_phone": registration.get("driver_2_phone", ""),
+        "driver_2_contact_status": "not_contacted",
+        "driver_2_standard_fee": standard_fee,
+        "driver_2_discount_amount": 0.0,
+        "driver_2_discount_reason": "none",
+        "driver_2_amount_paid": 0.0,
+        "driver_2_payment_method": "",
+        "driver_2_payment_note": "",
     }
+
+    entry = apply_team_payment_summary(entry)
 
     return save_event_entry(event_id, entry) 

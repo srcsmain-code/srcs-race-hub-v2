@@ -10,6 +10,11 @@
   "event_date": "2026-08-16",
   "registration_open": true,
   "registration_type": "team_2_driver",
+  "pricing": {
+  "currency": "EUR",
+  "standard_driver_entry_fee": 50.0
+}
+,
   "cars": [
     "GT-M Aero V10 Evo2 – Audi",
     "GT-M Akuro V6 Evo2 – Acura",

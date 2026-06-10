@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from src.event_entries import (
+    apply_team_payment_summary,
     create_single_driver_event_entry,
     create_team_2_driver_event_entry,
     list_event_entries,
@@ -13,6 +14,49 @@ from src.events import get_event_label, list_events
 from src.github_writer import github_configured
 from src.ui_components import show_header
 
+
+CONTACT_STATUS_OPTIONS = [
+    "not_contacted",
+    "contacted",
+    "awaiting_response",
+    "confirmed",
+    "issue",
+]
+
+PAYMENT_METHOD_OPTIONS = [
+    "",
+    "bank_transfer",
+    "tikkie",
+    "cash",
+    "card",
+    "other",
+]
+
+DISCOUNT_REASON_OPTIONS = [
+    "none",
+    "guest_seat",
+    "promo",
+    "sponsor",
+    "organiser_comp",
+    "early_bird",
+    "manual_discount",
+    "other",
+]
+
+PRIMARY_CONTACT_OPTIONS = [
+    "driver_1",
+    "driver_2",
+    "both",
+    "external",
+]
+
+READY_STATUS_OPTIONS = [
+    "not_ready",
+    "waiting_payment",
+    "waiting_confirmation",
+    "ready",
+    "issue",
+]
 
 ENTRY_TYPE_OPTIONS = [
     "regular",
@@ -33,6 +77,7 @@ ATTENDANCE_STATUS_OPTIONS = [
 PAYMENT_STATUS_OPTIONS = [
     "not_requested",
     "pending",
+    "part_paid",
     "paid",
     "comped",
     "refunded",
@@ -77,6 +122,21 @@ def entries_to_dataframe(entries: list[dict], registration_type: str) -> pd.Data
                     "Driver 2": item.get("driver_2_name", ""),
                     "Driver 2 Attendance": item.get("driver_2_attendance_status", ""),
                     "Entry Type": item.get("entry_type", ""),
+                                        "D1 Due": item.get("driver_1_amount_due", 0.0),
+                    "D1 Paid": item.get("driver_1_amount_paid", 0.0),
+                    "D1 Pay Status": item.get("driver_1_payment_status", ""),
+                    "D1 Discount": item.get("driver_1_discount_amount", 0.0),
+                    "D1 Discount Reason": item.get("driver_1_discount_reason", ""),
+                    "D2 Due": item.get("driver_2_amount_due", 0.0),
+                    "D2 Paid": item.get("driver_2_amount_paid", 0.0),
+                    "D2 Pay Status": item.get("driver_2_payment_status", ""),
+                    "D2 Discount": item.get("driver_2_discount_amount", 0.0),
+                    "D2 Discount Reason": item.get("driver_2_discount_reason", ""),
+                    "Team Due": item.get("team_amount_due", 0.0),
+                    "Team Paid": item.get("team_amount_paid", 0.0),
+                    "Team Payment": item.get("team_payment_status", ""),
+                    "Primary Contact": item.get("primary_contact_driver", ""),
+                    "Ready": item.get("ready_status", ""),
                     "Payment": item.get("payment_status", ""),
                     "Reserve": item.get("reserve_status", ""),
                     "Grid": item.get("grid_status", ""),
@@ -151,10 +211,110 @@ def render_create_single_driver_entry(event_id: str) -> None:
             st.exception(exc)
 
 
+def render_driver_payment_section(
+    driver_label: str,
+    prefix: str,
+    standard_fee: float,
+    selected: dict | None = None,
+) -> dict:
+    selected = selected or {}
+
+    st.markdown(f"#### {driver_label} payment/contact")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        email = st.text_input(
+            f"{driver_label} email",
+            value=selected.get(f"{prefix}_email", ""),
+            key=f"{prefix}_email",
+        )
+        phone = st.text_input(
+            f"{driver_label} phone",
+            value=selected.get(f"{prefix}_phone", ""),
+            key=f"{prefix}_phone",
+        )
+        contact_status = st.selectbox(
+            f"{driver_label} contact status",
+            CONTACT_STATUS_OPTIONS,
+            index=option_index(
+                CONTACT_STATUS_OPTIONS,
+                selected.get(f"{prefix}_contact_status", ""),
+                "not_contacted",
+            ),
+            key=f"{prefix}_contact_status",
+        )
+        shown_standard_fee = float(selected.get(f"{prefix}_standard_fee", standard_fee) or standard_fee)
+        st.number_input(
+            f"{driver_label} standard fee",
+            min_value=0.0,
+            step=5.0,
+            value=shown_standard_fee,
+            disabled=True,
+            key=f"{prefix}_standard_fee_display",
+        )
+
+    with col2:
+        discount_amount = st.number_input(
+            f"{driver_label} discount amount",
+            min_value=0.0,
+            step=5.0,
+            value=float(selected.get(f"{prefix}_discount_amount", 0.0) or 0.0),
+            key=f"{prefix}_discount_amount",
+        )
+        discount_reason = st.selectbox(
+            f"{driver_label} discount reason",
+            DISCOUNT_REASON_OPTIONS,
+            index=option_index(
+                DISCOUNT_REASON_OPTIONS,
+                selected.get(f"{prefix}_discount_reason", ""),
+                "none",
+            ),
+            key=f"{prefix}_discount_reason",
+        )
+        amount_paid = st.number_input(
+            f"{driver_label} amount paid",
+            min_value=0.0,
+            step=5.0,
+            value=float(selected.get(f"{prefix}_amount_paid", 0.0) or 0.0),
+            key=f"{prefix}_amount_paid",
+        )
+        payment_method = st.selectbox(
+            f"{driver_label} payment method",
+            PAYMENT_METHOD_OPTIONS,
+            index=option_index(
+                PAYMENT_METHOD_OPTIONS,
+                selected.get(f"{prefix}_payment_method", ""),
+                "",
+            ),
+            key=f"{prefix}_payment_method",
+        )
+
+    payment_note = st.text_area(
+        f"{driver_label} payment note",
+        value=selected.get(f"{prefix}_payment_note", ""),
+        key=f"{prefix}_payment_note",
+    )
+
+    return {
+        f"{prefix}_email": email,
+        f"{prefix}_phone": phone,
+        f"{prefix}_contact_status": contact_status,
+        f"{prefix}_standard_fee": shown_standard_fee,
+        f"{prefix}_discount_amount": discount_amount,
+        f"{prefix}_discount_reason": discount_reason,
+        f"{prefix}_amount_paid": amount_paid,
+        f"{prefix}_payment_method": payment_method,
+        f"{prefix}_payment_note": payment_note,
+    }
+
 def render_create_team_2_driver_entry(event_id: str, event: dict) -> None:
     st.subheader("Create 2-driver team event entry")
 
     cars = event.get("cars", [])
+    pricing = event.get("pricing", {})
+    standard_fee = float(pricing.get("standard_driver_entry_fee", 0.0) or 0.0)
+    currency = pricing.get("currency", "EUR")
 
     with st.form(f"{event_id}_create_team_2_driver_event_entry"):
         st.markdown("### Team")
@@ -187,19 +347,35 @@ def render_create_team_2_driver_entry(event_id: str, event: dict) -> None:
                 key=f"{event_id}_d2_attendance_create",
             )
 
+        st.markdown("### Payment / contact per driver")
+        st.caption(f"Standard driver entry fee for this event: {currency} {standard_fee:.2f}")
+
+        driver_1_payment_data = render_driver_payment_section(
+            "Driver 1",
+            "driver_1",
+            standard_fee,
+        )
+
+        driver_2_payment_data = render_driver_payment_section(
+            "Driver 2",
+            "driver_2",
+            standard_fee,
+        )
+        
         st.markdown("### Entry management")
 
         col1, col2 = st.columns(2)
 
         with col1:
             entry_type = st.selectbox("Entry type", ENTRY_TYPE_OPTIONS)
-            payment_status = st.selectbox("Payment status", PAYMENT_STATUS_OPTIONS)
+            reserve_status = st.selectbox("Reserve status", RESERVE_STATUS_OPTIONS)
+            primary_contact_driver = st.selectbox("Primary contact", PRIMARY_CONTACT_OPTIONS)
 
         with col2:
-            reserve_status = st.selectbox("Reserve status", RESERVE_STATUS_OPTIONS)
             grid_status = st.selectbox("Grid status", GRID_STATUS_OPTIONS)
+            ready_status = st.selectbox("Ready status", READY_STATUS_OPTIONS)
 
-        notes = st.text_area("Notes")
+        notes = st.text_area("General notes")
 
         submitted = st.form_submit_button("Create / save team entry")
 
@@ -223,10 +399,14 @@ def render_create_team_2_driver_entry(event_id: str, event: dict) -> None:
                 driver_2_name=driver_2_name,
                 driver_2_attendance_status=driver_2_attendance_status,
                 entry_type=entry_type,
-                payment_status=payment_status,
                 reserve_status=reserve_status,
                 grid_status=grid_status,
                 notes=notes,
+                event=event,
+                primary_contact_driver=primary_contact_driver,
+                ready_status=ready_status,
+                **driver_1_payment_data,
+                **driver_2_payment_data,
             )
             st.success("Team event entry saved.")
             st.code(path)
@@ -307,6 +487,9 @@ def render_update_single_driver_entry(event_id: str, selected: dict) -> None:
 
 def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict) -> None:
     cars = event.get("cars", [])
+    pricing = event.get("pricing", {})
+    standard_fee = float(pricing.get("standard_driver_entry_fee", 0.0) or 0.0)
+    currency = pricing.get("currency", "EUR")
 
     with st.form(f"{event_id}_update_team_2_driver_event_entry"):
         st.markdown("### Team")
@@ -365,25 +548,38 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
                 ENTRY_TYPE_OPTIONS,
                 index=option_index(ENTRY_TYPE_OPTIONS, selected.get("entry_type", ""), "regular"),
             )
-            payment_status = st.selectbox(
-                "Payment status",
-                PAYMENT_STATUS_OPTIONS,
-                index=option_index(PAYMENT_STATUS_OPTIONS, selected.get("payment_status", ""), "pending"),
-            )
-
-        with col2:
             reserve_status = st.selectbox(
                 "Reserve status",
                 RESERVE_STATUS_OPTIONS,
                 index=option_index(RESERVE_STATUS_OPTIONS, selected.get("reserve_status", ""), "not_applicable"),
             )
+            primary_contact_driver = st.selectbox(
+                "Primary contact",
+                PRIMARY_CONTACT_OPTIONS,
+                index=option_index(
+                    PRIMARY_CONTACT_OPTIONS,
+                    selected.get("primary_contact_driver", ""),
+                    "driver_1",
+                ),
+            )
+
+        with col2:
             grid_status = st.selectbox(
                 "Grid status",
                 GRID_STATUS_OPTIONS,
                 index=option_index(GRID_STATUS_OPTIONS, selected.get("grid_status", ""), "not_assigned"),
             )
+            ready_status = st.selectbox(
+                "Ready status",
+                READY_STATUS_OPTIONS,
+                index=option_index(
+                    READY_STATUS_OPTIONS,
+                    selected.get("ready_status", ""),
+                    "not_ready",
+                ),
+            )
 
-        notes = st.text_area("Notes", value=selected.get("notes", ""))
+        notes = st.text_area("General notes", value=selected.get("notes", ""))
         submitted = st.form_submit_button("Update team entry")
 
     if submitted:
@@ -395,29 +591,39 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             st.error("Both driver names are required.")
             return
 
+               
         try:
+            updates = {
+                "entry_format": "team_2_driver",
+                "team_name": team_name,
+                "car_choice": car_choice,
+                "backup_car_choice": backup_car_choice,
+                "driver_1_name": driver_1_name,
+                "driver_1_attendance_status": driver_1_attendance_status,
+                "driver_2_name": driver_2_name,
+                "driver_2_attendance_status": driver_2_attendance_status,
+                "entry_type": entry_type,
+                "reserve_status": reserve_status,
+                "grid_status": grid_status,
+                "primary_contact_driver": primary_contact_driver,
+                "ready_status": ready_status,
+                "notes": notes,
+                **driver_1_payment_data,
+                **driver_2_payment_data,
+            }
+
+            updates = apply_team_payment_summary(updates)
+
             path = update_event_entry(
                 event_id=event_id,
                 existing_entry=selected,
-                updates={
-                    "entry_format": "team_2_driver",
-                    "team_name": team_name,
-                    "car_choice": car_choice,
-                    "backup_car_choice": backup_car_choice,
-                    "driver_1_name": driver_1_name,
-                    "driver_1_attendance_status": driver_1_attendance_status,
-                    "driver_2_name": driver_2_name,
-                    "driver_2_attendance_status": driver_2_attendance_status,
-                    "entry_type": entry_type,
-                    "payment_status": payment_status,
-                    "reserve_status": reserve_status,
-                    "grid_status": grid_status,
-                    "notes": notes,
-                },
+                updates=updates,
             )
+
             st.success("Team event entry updated.")
             st.code(path)
             st.rerun()
+
         except Exception as exc:
             st.error("Could not update team event entry.")
             st.exception(exc)

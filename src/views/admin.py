@@ -336,6 +336,7 @@ def render_create_event_entry_from_registration_button(
     event_id: str,
     selected: dict,
     registration_type: str,
+    event: dict | None = None,
 ) -> None:
     if registration_type != "team_2_driver":
         return
@@ -357,7 +358,8 @@ def render_create_event_entry_from_registration_button(
             path = create_team_2_driver_entry_from_registration(
                 event_id=event_id,
                 registration=selected,
-            )
+                event=event,
+)
             st.success("Event Entry created.")
             st.code(path)
             st.rerun()
@@ -366,7 +368,7 @@ def render_create_event_entry_from_registration_button(
         except Exception as exc:
             st.error("Could not create Event Entry from registration.")
             st.exception(exc)
-            
+
     if registration_type != "team_2_driver":
         return
 
@@ -610,6 +612,7 @@ def render() -> None:
                 event_id,
                 approved_selected,
                 registration_type,
+                selected_event,
             )
         
         if registration_type == "lead_form" and approved:
