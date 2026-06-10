@@ -299,8 +299,7 @@ def render_driver_payment_section(
     return {
         f"{prefix}_email": email,
         f"{prefix}_phone": phone,
-        f"{prefix}_contact_status": contact_status,
-        f"{prefix}_standard_fee": shown_standard_fee,
+        f"{prefix}_contact_status": contact_status,      
         f"{prefix}_discount_amount": discount_amount,
         f"{prefix}_discount_reason": discount_reason,
         f"{prefix}_amount_paid": amount_paid,
@@ -612,7 +611,23 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
                 **driver_2_payment_data,
             }
 
-            updates = apply_team_payment_summary(updates)
+            calculation_entry = dict(selected)
+            calculation_entry.update(updates)
+            calculation_entry = apply_team_payment_summary(calculation_entry)
+
+            updates.update(
+                {
+                    "driver_1_amount_due": calculation_entry.get("driver_1_amount_due", 0.0),
+                    "driver_2_amount_due": calculation_entry.get("driver_2_amount_due", 0.0),
+                    "driver_1_payment_status": calculation_entry.get("driver_1_payment_status", ""),
+                    "driver_2_payment_status": calculation_entry.get("driver_2_payment_status", ""),
+                    "team_standard_fee": calculation_entry.get("team_standard_fee", 0.0),
+                    "team_discount_amount": calculation_entry.get("team_discount_amount", 0.0),
+                    "team_amount_due": calculation_entry.get("team_amount_due", 0.0),
+                    "team_amount_paid": calculation_entry.get("team_amount_paid", 0.0),
+                    "team_payment_status": calculation_entry.get("team_payment_status", ""),
+                }
+            )
 
             path = update_event_entry(
                 event_id=event_id,
