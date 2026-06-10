@@ -353,14 +353,12 @@ def render_create_team_2_driver_entry(event_id: str, event: dict) -> None:
             "Driver 1",
             "driver_1",
             standard_fee,
-            selected,
         )
 
         driver_2_payment_data = render_driver_payment_section(
             "Driver 2",
             "driver_2",
             standard_fee,
-            selected,
         )
         
         st.markdown("### Entry management")
