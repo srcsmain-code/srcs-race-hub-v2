@@ -12,7 +12,7 @@
   "registration_type": "team_2_driver",
   "pricing": {
   "currency": "EUR",
-  "standard_driver_entry_fee": 50.0
+  "standard_driver_entry_fee": 0.0
 }
 ,
   "cars": [
