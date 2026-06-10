@@ -486,13 +486,18 @@ def render_update_single_driver_entry(event_id: str, selected: dict) -> None:
 
 def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict) -> None:
     cars = event.get("cars", [])
+
     pricing = event.get("pricing", {})
     standard_fee = float(pricing.get("standard_driver_entry_fee", 0.0) or 0.0)
     currency = pricing.get("currency", "EUR")
 
     with st.form(f"{event_id}_update_team_2_driver_event_entry"):
         st.markdown("### Team")
-        team_name = st.text_input("Team name", value=selected.get("team_name", ""))
+
+        team_name = st.text_input(
+            "Team name",
+            value=selected.get("team_name", ""),
+        )
 
         if cars:
             car_choice = st.selectbox(
@@ -506,15 +511,24 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
                 index=option_index(cars, selected.get("backup_car_choice", ""), cars[0]),
             )
         else:
-            car_choice = st.text_input("Car", value=selected.get("car_choice", ""))
-            backup_car_choice = st.text_input("Backup car", value=selected.get("backup_car_choice", ""))
+            car_choice = st.text_input(
+                "Car",
+                value=selected.get("car_choice", ""),
+            )
+            backup_car_choice = st.text_input(
+                "Backup car",
+                value=selected.get("backup_car_choice", ""),
+            )
 
         st.markdown("### Drivers")
 
         col_d1, col_d2 = st.columns(2)
 
         with col_d1:
-            driver_1_name = st.text_input("Driver 1 name", value=selected.get("driver_1_name", ""))
+            driver_1_name = st.text_input(
+                "Driver 1 name",
+                value=selected.get("driver_1_name", ""),
+            )
             driver_1_attendance_status = st.selectbox(
                 "Driver 1 attendance",
                 ATTENDANCE_STATUS_OPTIONS,
@@ -526,7 +540,10 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             )
 
         with col_d2:
-            driver_2_name = st.text_input("Driver 2 name", value=selected.get("driver_2_name", ""))
+            driver_2_name = st.text_input(
+                "Driver 2 name",
+                value=selected.get("driver_2_name", ""),
+            )
             driver_2_attendance_status = st.selectbox(
                 "Driver 2 attendance",
                 ATTENDANCE_STATUS_OPTIONS,
@@ -537,6 +554,23 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
                 ),
             )
 
+        st.markdown("### Payment / contact per driver")
+        st.caption(f"Standard driver entry fee for this event: {currency} {standard_fee:.2f}")
+
+        driver_1_payment_data = render_driver_payment_section(
+            "Driver 1",
+            "driver_1",
+            standard_fee,
+            selected,
+        )
+
+        driver_2_payment_data = render_driver_payment_section(
+            "Driver 2",
+            "driver_2",
+            standard_fee,
+            selected,
+        )
+
         st.markdown("### Entry management")
 
         col1, col2 = st.columns(2)
@@ -545,12 +579,20 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             entry_type = st.selectbox(
                 "Entry type",
                 ENTRY_TYPE_OPTIONS,
-                index=option_index(ENTRY_TYPE_OPTIONS, selected.get("entry_type", ""), "regular"),
+                index=option_index(
+                    ENTRY_TYPE_OPTIONS,
+                    selected.get("entry_type", ""),
+                    "regular",
+                ),
             )
             reserve_status = st.selectbox(
                 "Reserve status",
                 RESERVE_STATUS_OPTIONS,
-                index=option_index(RESERVE_STATUS_OPTIONS, selected.get("reserve_status", ""), "not_applicable"),
+                index=option_index(
+                    RESERVE_STATUS_OPTIONS,
+                    selected.get("reserve_status", ""),
+                    "not_applicable",
+                ),
             )
             primary_contact_driver = st.selectbox(
                 "Primary contact",
@@ -566,7 +608,11 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             grid_status = st.selectbox(
                 "Grid status",
                 GRID_STATUS_OPTIONS,
-                index=option_index(GRID_STATUS_OPTIONS, selected.get("grid_status", ""), "not_assigned"),
+                index=option_index(
+                    GRID_STATUS_OPTIONS,
+                    selected.get("grid_status", ""),
+                    "not_assigned",
+                ),
             )
             ready_status = st.selectbox(
                 "Ready status",
@@ -578,7 +624,11 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
                 ),
             )
 
-        notes = st.text_area("General notes", value=selected.get("notes", ""))
+        notes = st.text_area(
+            "General notes",
+            value=selected.get("notes", ""),
+        )
+
         submitted = st.form_submit_button("Update team entry")
 
     if submitted:
@@ -590,7 +640,6 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             st.error("Both driver names are required.")
             return
 
-               
         try:
             updates = {
                 "entry_format": "team_2_driver",
@@ -613,10 +662,19 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
 
             calculation_entry = dict(selected)
             calculation_entry.update(updates)
+
+            if not calculation_entry.get("driver_1_standard_fee"):
+                calculation_entry["driver_1_standard_fee"] = standard_fee
+
+            if not calculation_entry.get("driver_2_standard_fee"):
+                calculation_entry["driver_2_standard_fee"] = standard_fee
+
             calculation_entry = apply_team_payment_summary(calculation_entry)
 
             updates.update(
                 {
+                    "driver_1_standard_fee": calculation_entry.get("driver_1_standard_fee", standard_fee),
+                    "driver_2_standard_fee": calculation_entry.get("driver_2_standard_fee", standard_fee),
                     "driver_1_amount_due": calculation_entry.get("driver_1_amount_due", 0.0),
                     "driver_2_amount_due": calculation_entry.get("driver_2_amount_due", 0.0),
                     "driver_1_payment_status": calculation_entry.get("driver_1_payment_status", ""),
