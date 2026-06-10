@@ -352,6 +352,9 @@ def render_create_event_entry_from_registration_button(
             )
             st.success("Event Entry created.")
             st.code(path)
+        
+        except ValueError as exc:
+            st.warning(str(exc))
         except Exception as exc:
             st.error("Could not create Event Entry from registration.")
             st.exception(exc)

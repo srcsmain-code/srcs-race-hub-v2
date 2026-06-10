@@ -187,12 +187,36 @@ def create_team_2_driver_entry_from_registration(
         raise ValueError("Registration is missing one or both driver names.")
 
     entry_id = build_entry_id(team_name, "regular")
+    path = f"{event_entries_folder(event_id)}/{entry_id}.json"
+
+    existing_entries = list_event_entries(event_id)
+    existing_entry_ids = {
+        entry.get("entry_id", "")
+        for entry in existing_entries
+    }
+
+    existing_source_registration_ids = {
+        entry.get("source_registration_id", "")
+        for entry in existing_entries
+    }
+
+    source_registration_id = registration.get("submission_id", "")
+
+    if entry_id in existing_entry_ids:
+        raise ValueError(
+            f"An Event Entry already exists for this team: {team_name}."
+        )
+
+    if source_registration_id and source_registration_id in existing_source_registration_ids:
+        raise ValueError(
+            "An Event Entry has already been created from this registration."
+        )
 
     entry = {
         "entry_id": entry_id,
         "event_id": event_id,
         "entry_format": "team_2_driver",
-        "source_registration_id": registration.get("submission_id", ""),
+        "source_registration_id": source_registration_id,
         "source_registration_path": registration.get("_github_path", ""),
         "team_name": team_name,
         "car_choice": car_choice,
@@ -209,4 +233,4 @@ def create_team_2_driver_entry_from_registration(
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
     }
 
-    return save_event_entry(event_id, entry)    
+    return save_event_entry(event_id, entry) 
