@@ -496,4 +496,4 @@ def render_multi_route_registration_form(event: dict):
 
                 return True, payload, []   
 
-            return False, {}, []                
+    return False, {}, []                
