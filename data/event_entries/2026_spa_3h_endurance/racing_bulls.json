@@ -18,7 +18,7 @@
   "driver_1_standard_fee": 0.0,
   "driver_1_discount_amount": 25.0,
   "driver_1_discount_reason": "sponsor",
-  "driver_1_amount_paid": 0.0,
+  "driver_1_amount_paid": 25.0,
   "driver_1_payment_method": "tikkie",
   "driver_1_payment_note": "",
   "driver_2_name": "Zander",
@@ -41,7 +41,7 @@
   "team_standard_fee": 0.0,
   "team_discount_amount": 25.0,
   "team_amount_due": 0.0,
-  "team_amount_paid": 0.0,
+  "team_amount_paid": 25.0,
   "team_payment_status": "comped",
-  "updated_at_utc": "2026-06-11T09:06:07.840053+00:00"
+  "updated_at_utc": "2026-06-11T09:06:14.193933+00:00"
 }
