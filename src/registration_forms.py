@@ -303,7 +303,7 @@ def render_registration_form(event: dict[str, Any]) -> tuple[bool, dict[str, Any
         ],
     )
 
-def render_multi_route_registration_form(event: dict) -> dict | None:
+def render_multi_route_registration_form(event: dict):
     event_id = event.get("event_id", "")
     cars = event.get("cars", [])
     experience_options = event.get(
@@ -366,10 +366,9 @@ def render_multi_route_registration_form(event: dict) -> dict | None:
 
             if submitted:
                 if not team_name or not driver_1_name or not driver_2_name:
-                    st.error("Team name and both driver names are required.")
-                    return None
+                    return True, {}, ["Team name and both driver names are required."]
 
-                return {
+                payload = {
                     "registration_type": "multi_route",
                     "registration_route": "team_2_driver",
                     "team_name": team_name,
@@ -384,6 +383,8 @@ def render_multi_route_registration_form(event: dict) -> dict | None:
                     "driver_2_phone": driver_2_phone,
                     "notes": notes,
                 }
+
+                return True, payload, []
 
         elif registration_route == "individual_driver":
             st.markdown("### Individual driver details")
@@ -421,9 +422,9 @@ def render_multi_route_registration_form(event: dict) -> dict | None:
             if submitted:
                 if not driver_name or not email:
                     st.error("Driver name and email are required.")
-                    return None
+                    return True, {}, ["Driver name and email are required."]
 
-                return {
+                payload = {
                     "registration_type": "multi_route",
                     "registration_route": "individual_driver",
                     "driver_name": driver_name,
@@ -437,6 +438,8 @@ def render_multi_route_registration_form(event: dict) -> dict | None:
                     "pairing_status": "waiting",
                     "notes": notes,
                 }
+
+                return True, payload, []
 
         else:
             st.markdown("### Keep me updated")
@@ -471,14 +474,12 @@ def render_multi_route_registration_form(event: dict) -> dict | None:
 
             if submitted:
                 if not name or not email:
-                    st.error("Name and email are required.")
-                    return None
+                    return True, {}, ["Name and email are required."]
 
                 if not consent_to_contact:
-                    st.error("Please confirm that SRCS may contact you about this event.")
-                    return None
+                    return True, {}, ["Please confirm that SRCS may contact you about this event."]
 
-                return {
+                payload = {
                     "registration_type": "multi_route",
                     "registration_route": "interest_only",
                     "name": name,
@@ -493,4 +494,6 @@ def render_multi_route_registration_form(event: dict) -> dict | None:
                     "notes": notes,
                 }
 
-    return None    
+                return True, payload, []   
+
+            return False, {}, []                
