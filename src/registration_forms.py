@@ -282,6 +282,9 @@ def render_lead_form(event: dict[str, Any]) -> tuple[bool, dict[str, Any] | None
 def render_registration_form(event: dict[str, Any]) -> tuple[bool, dict[str, Any] | None, list[str]]:
     registration_type = event.get("registration_type", "")
 
+    if registration_type == "multi_route":
+        return render_multi_route_registration_form(event)
+        
     if registration_type == "team_2_driver":
         return render_team_2_driver_form(event)
 
@@ -299,3 +302,195 @@ def render_registration_form(event: dict[str, Any]) -> tuple[bool, dict[str, Any
             "Supported types are team_2_driver, single_driver, and lead_form."
         ],
     )
+
+def render_multi_route_registration_form(event: dict) -> dict | None:
+    event_id = event.get("event_id", "")
+    cars = event.get("cars", [])
+    experience_options = event.get(
+        "experience_options",
+        ["New", "Casual", "Intermediate", "Fast", "Alien"],
+    )
+
+    st.subheader("Register for this event")
+
+    registration_route_label = st.radio(
+        "How would you like to register?",
+        [
+            "Register a complete 2-driver team",
+            "Register as an individual driver looking for a teammate",
+            "I’m interested — keep me updated",
+        ],
+        key=f"{event_id}_registration_route",
+    )
+
+    if registration_route_label == "Register a complete 2-driver team":
+        registration_route = "team_2_driver"
+    elif registration_route_label == "Register as an individual driver looking for a teammate":
+        registration_route = "individual_driver"
+    else:
+        registration_route = "interest_only"
+
+    with st.form(f"{event_id}_{registration_route}_registration_form"):
+        if registration_route == "team_2_driver":
+            st.markdown("### Team details")
+
+            team_name = st.text_input("Team name")
+
+            if cars:
+                car_choice = st.selectbox("Preferred car", cars)
+                backup_car_choice = st.selectbox("Backup car", cars)
+            else:
+                car_choice = st.text_input("Preferred car")
+                backup_car_choice = st.text_input("Backup car")
+
+            team_experience = st.selectbox(
+                "Team experience level",
+                experience_options,
+            )
+
+            st.markdown("### Driver 1")
+
+            driver_1_name = st.text_input("Driver 1 name")
+            driver_1_email = st.text_input("Driver 1 email")
+            driver_1_phone = st.text_input("Driver 1 phone")
+
+            st.markdown("### Driver 2")
+
+            driver_2_name = st.text_input("Driver 2 name")
+            driver_2_email = st.text_input("Driver 2 email")
+            driver_2_phone = st.text_input("Driver 2 phone")
+
+            notes = st.text_area("Notes / questions")
+
+            submitted = st.form_submit_button("Submit team registration")
+
+            if submitted:
+                if not team_name or not driver_1_name or not driver_2_name:
+                    st.error("Team name and both driver names are required.")
+                    return None
+
+                return {
+                    "registration_type": "multi_route",
+                    "registration_route": "team_2_driver",
+                    "team_name": team_name,
+                    "car_choice": car_choice,
+                    "backup_car_choice": backup_car_choice,
+                    "experience": team_experience,
+                    "driver_1_name": driver_1_name,
+                    "driver_1_email": driver_1_email,
+                    "driver_1_phone": driver_1_phone,
+                    "driver_2_name": driver_2_name,
+                    "driver_2_email": driver_2_email,
+                    "driver_2_phone": driver_2_phone,
+                    "notes": notes,
+                }
+
+        elif registration_route == "individual_driver":
+            st.markdown("### Individual driver details")
+
+            driver_name = st.text_input("Driver name")
+            email = st.text_input("Email")
+            phone = st.text_input("Phone")
+
+            experience = st.selectbox(
+                "Experience level",
+                experience_options,
+            )
+
+            if cars:
+                preferred_car = st.selectbox("Preferred car", cars)
+                backup_car = st.selectbox("Backup car", cars)
+            else:
+                preferred_car = st.text_input("Preferred car")
+                backup_car = st.text_input("Backup car")
+
+            can_be_team_captain = st.selectbox(
+                "Are you willing to act as team captain if needed?",
+                ["Yes", "No", "Maybe"],
+            )
+
+            preferred_teammate = st.text_input(
+                "Preferred teammate, if any",
+                help="Optional. Leave blank if you are happy to be paired by SRCS.",
+            )
+
+            notes = st.text_area("Notes / availability / questions")
+
+            submitted = st.form_submit_button("Submit individual registration")
+
+            if submitted:
+                if not driver_name or not email:
+                    st.error("Driver name and email are required.")
+                    return None
+
+                return {
+                    "registration_type": "multi_route",
+                    "registration_route": "individual_driver",
+                    "driver_name": driver_name,
+                    "email": email,
+                    "phone": phone,
+                    "experience": experience,
+                    "preferred_car": preferred_car,
+                    "backup_car": backup_car,
+                    "can_be_team_captain": can_be_team_captain,
+                    "preferred_teammate": preferred_teammate,
+                    "pairing_status": "waiting",
+                    "notes": notes,
+                }
+
+        else:
+            st.markdown("### Keep me updated")
+
+            name = st.text_input("Name")
+            email = st.text_input("Email")
+            phone = st.text_input("Phone")
+
+            interest_level = st.selectbox(
+                "Interest level",
+                [
+                    "Just interested",
+                    "Maybe want to race",
+                    "Want to race but need more info",
+                    "Want to watch / spectate",
+                ],
+            )
+
+            experience = st.selectbox(
+                "Sim racing experience",
+                ["Not sure", *experience_options],
+            )
+
+            consent_to_contact = st.checkbox(
+                "I agree that SRCS may contact me about this event.",
+                value=True,
+            )
+
+            notes = st.text_area("Questions / notes")
+
+            submitted = st.form_submit_button("Keep me updated")
+
+            if submitted:
+                if not name or not email:
+                    st.error("Name and email are required.")
+                    return None
+
+                if not consent_to_contact:
+                    st.error("Please confirm that SRCS may contact you about this event.")
+                    return None
+
+                return {
+                    "registration_type": "multi_route",
+                    "registration_route": "interest_only",
+                    "name": name,
+                    "email": email,
+                    "phone": phone,
+                    "interest_level": interest_level,
+                    "experience": experience,
+                    "consent_to_contact": consent_to_contact,
+                    "lead_status": "new",
+                    "contact_status": "not_contacted",
+                    "follow_up_priority": "normal",
+                    "notes": notes,
+                }
+
+    return None    

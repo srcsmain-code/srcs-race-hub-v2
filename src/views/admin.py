@@ -20,6 +20,54 @@ from src.ui_components import show_header
 def get_registration_type(event: dict) -> str:
     return event.get("registration_type", "")
 
+def multi_route_rows(registrations: list[dict]) -> list[dict]:
+    rows = []
+
+    for item in registrations:
+        route = item.get("registration_route", "")
+
+        if route == "team_2_driver":
+            display_name = item.get("team_name", "")
+            driver_summary = f"{item.get('driver_1_name', '')} / {item.get('driver_2_name', '')}"
+            contact = item.get("driver_1_email", "") or item.get("driver_2_email", "")
+            status_detail = "Team registration"
+
+        elif route == "individual_driver":
+            display_name = item.get("driver_name", "")
+            driver_summary = item.get("driver_name", "")
+            contact = item.get("email", "")
+            status_detail = f"Pairing: {item.get('pairing_status', 'waiting')}"
+
+        elif route == "interest_only":
+            display_name = item.get("name", "")
+            driver_summary = item.get("name", "")
+            contact = item.get("email", "")
+            status_detail = f"Lead: {item.get('lead_status', 'new')}"
+
+        else:
+            display_name = item.get("team_name") or item.get("driver_name") or item.get("name", "")
+            driver_summary = display_name
+            contact = item.get("email", "")
+            status_detail = ""
+
+        rows.append(
+            {
+                "Route": route,
+                "Name / Team": display_name,
+                "Drivers": driver_summary,
+                "Contact": contact,
+                "Experience": item.get("experience", ""),
+                "Car": item.get("car_choice") or item.get("preferred_car", ""),
+                "Backup Car": item.get("backup_car_choice") or item.get("backup_car", ""),
+                "Status Detail": status_detail,
+                "Status": item.get("status", ""),
+                "Event Entry Created": "Yes" if item.get("event_entry_created", False) else "No",
+                "Submitted UTC": item.get("submitted_at_utc", ""),
+                "GitHub Path": item.get("_github_path", ""),
+            }
+        )
+
+    return rows
 
 def team_2_driver_rows(registrations: list[dict]) -> list[dict]:
     rows = []
@@ -93,7 +141,9 @@ def lead_form_rows(registrations: list[dict]) -> list[dict]:
 
 
 def registrations_to_dataframe(registrations: list[dict], registration_type: str) -> pd.DataFrame:
-    if registration_type == "team_2_driver":
+    if registration_type == "multi_route":
+        rows = multi_route_rows(registrations)
+    elif registration_type == "team_2_driver":
         rows = team_2_driver_rows(registrations)
     elif registration_type == "single_driver":
         rows = single_driver_rows(registrations)
@@ -126,6 +176,20 @@ def generic_rows(registrations: list[dict]) -> list[dict]:
 def get_registration_label(item: dict, registration_type: str) -> str:
     submitted = item.get("submitted_at_utc", "")
 
+    if registration_type == "multi_route":
+        route = item.get("registration_route", "")
+
+    if route == "team_2_driver":
+            return f"Team — {item.get('team_name', 'Unnamed team')}"
+
+    if route == "individual_driver":
+            return f"Individual — {item.get('driver_name', 'Unnamed driver')}"
+
+    if route == "interest_only":
+            return f"Interest — {item.get('name', 'Unnamed lead')}"
+
+    return f"Unknown route — {item.get('submission_id', 'no id')}"
+    
     if registration_type == "team_2_driver":
         name = item.get("team_name", "Unnamed team")
     elif registration_type == "single_driver":
@@ -338,7 +402,16 @@ def render_create_event_entry_from_registration_button(
     registration_type: str,
     event: dict | None = None,
 ) -> None:
-    if registration_type != "team_2_driver":
+    is_team_registration = (
+        registration_type == "team_2_driver"
+        or (
+            registration_type == "multi_route"
+            and selected.get("registration_route") == "team_2_driver"
+        )
+    )
+
+    if not is_team_registration:
+        st.info("This registration is not a complete two-driver team, so it cannot create an Event Entry directly.")
         return
 
     st.divider()
@@ -399,6 +472,11 @@ def registration_has_event_entry(
     registration: dict,
     event_entries: list[dict],
 ) -> bool:
+    registration_route = registration.get("registration_route", "")
+
+    if registration_route not in ["team_2_driver", ""]:
+        return False
+
     registration_id = registration.get("submission_id", "")
     team_name = registration.get("team_name", "")
 
@@ -581,7 +659,7 @@ def render() -> None:
 
         event_entries = list_event_entries(event_id)
 
-        if registration_type == "team_2_driver":
+        if registration_type in ["team_2_driver", "multi_route"]:
             approved = add_event_entry_created_flag(approved, event_entries)
 
         render_registration_table(

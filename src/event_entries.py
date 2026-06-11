@@ -305,7 +305,14 @@ def update_event_entry(
 def create_team_2_driver_entry_from_registration(
     event_id: str,
     registration: dict[str, Any],
+    event: dict | None = None,
 ) -> str:
+    registration_route = registration.get("registration_route", "team_2_driver")
+
+    if registration_route not in ["team_2_driver", ""]:
+        raise ValueError(
+            "Only complete two-driver team registrations can create Event Entries directly."
+        )
     team_name = registration.get("team_name", "")
     car_choice = registration.get("car_choice", "")
     backup_car_choice = registration.get("backup_car_choice", "")

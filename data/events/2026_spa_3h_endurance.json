@@ -9,7 +9,7 @@
   "track": "Spa-Francorchamps",
   "event_date": "2026-08-16",
   "registration_open": true,
-  "registration_type": "team_2_driver",
+  "registration_type": "multi_route",
   "pricing": {
   "currency": "EUR",
   "standard_driver_entry_fee": 0.0
