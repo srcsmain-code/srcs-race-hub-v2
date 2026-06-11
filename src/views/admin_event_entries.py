@@ -216,6 +216,7 @@ def render_driver_payment_section(
     prefix: str,
     standard_fee: float,
     selected: dict | None = None,
+    key_scope: str = "entry",
 ) -> dict:
     selected = selected or {}
 
@@ -227,12 +228,12 @@ def render_driver_payment_section(
         email = st.text_input(
             f"{driver_label} email",
             value=selected.get(f"{prefix}_email", ""),
-            key=f"{prefix}_email",
+            key=f"{key_scope}_{prefix}_email",
         )
         phone = st.text_input(
             f"{driver_label} phone",
             value=selected.get(f"{prefix}_phone", ""),
-            key=f"{prefix}_phone",
+            key=f"{key_scope}_{prefix}_phone",
         )
         contact_status = st.selectbox(
             f"{driver_label} contact status",
@@ -242,16 +243,20 @@ def render_driver_payment_section(
                 selected.get(f"{prefix}_contact_status", ""),
                 "not_contacted",
             ),
-            key=f"{prefix}_contact_status",
+            key=f"{key_scope}_{prefix}_contact_status",
         )
-        shown_standard_fee = float(selected.get(f"{prefix}_standard_fee", standard_fee) or standard_fee)
+
+        shown_standard_fee = float(
+            selected.get(f"{prefix}_standard_fee", standard_fee) or standard_fee
+        )
+
         st.number_input(
             f"{driver_label} standard fee",
             min_value=0.0,
             step=5.0,
             value=shown_standard_fee,
             disabled=True,
-            key=f"{prefix}_standard_fee_display",
+            key=f"{key_scope}_{prefix}_standard_fee_display",
         )
 
     with col2:
@@ -260,7 +265,7 @@ def render_driver_payment_section(
             min_value=0.0,
             step=5.0,
             value=float(selected.get(f"{prefix}_discount_amount", 0.0) or 0.0),
-            key=f"{prefix}_discount_amount",
+            key=f"{key_scope}_{prefix}_discount_amount",
         )
         discount_reason = st.selectbox(
             f"{driver_label} discount reason",
@@ -270,14 +275,14 @@ def render_driver_payment_section(
                 selected.get(f"{prefix}_discount_reason", ""),
                 "none",
             ),
-            key=f"{prefix}_discount_reason",
+            key=f"{key_scope}_{prefix}_discount_reason",
         )
         amount_paid = st.number_input(
             f"{driver_label} amount paid",
             min_value=0.0,
             step=5.0,
             value=float(selected.get(f"{prefix}_amount_paid", 0.0) or 0.0),
-            key=f"{prefix}_amount_paid",
+            key=f"{key_scope}_{prefix}_amount_paid",
         )
         payment_method = st.selectbox(
             f"{driver_label} payment method",
@@ -287,19 +292,19 @@ def render_driver_payment_section(
                 selected.get(f"{prefix}_payment_method", ""),
                 "",
             ),
-            key=f"{prefix}_payment_method",
+            key=f"{key_scope}_{prefix}_payment_method",
         )
 
     payment_note = st.text_area(
         f"{driver_label} payment note",
         value=selected.get(f"{prefix}_payment_note", ""),
-        key=f"{prefix}_payment_note",
+        key=f"{key_scope}_{prefix}_payment_note",
     )
 
     return {
         f"{prefix}_email": email,
         f"{prefix}_phone": phone,
-        f"{prefix}_contact_status": contact_status,      
+        f"{prefix}_contact_status": contact_status,
         f"{prefix}_discount_amount": discount_amount,
         f"{prefix}_discount_reason": discount_reason,
         f"{prefix}_amount_paid": amount_paid,
@@ -353,12 +358,14 @@ def render_create_team_2_driver_entry(event_id: str, event: dict) -> None:
             "Driver 1",
             "driver_1",
             standard_fee,
+            key_scope=f"{event_id}_create",
         )
 
         driver_2_payment_data = render_driver_payment_section(
             "Driver 2",
             "driver_2",
             standard_fee,
+            key_scope=f"{event_id}_create",
         )
         
         st.markdown("### Entry management")
@@ -562,6 +569,7 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             "driver_1",
             standard_fee,
             selected,
+            key_scope=f"{event_id}_update",
         )
 
         driver_2_payment_data = render_driver_payment_section(
@@ -569,6 +577,7 @@ def render_update_team_2_driver_entry(event_id: str, event: dict, selected: dict
             "driver_2",
             standard_fee,
             selected,
+            key_scope=f"{event_id}_update",
         )
 
         st.markdown("### Entry management")
