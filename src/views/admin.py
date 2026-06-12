@@ -467,18 +467,22 @@ def render_create_event_entry_from_registration_button(
     registration_type: str,
     event: dict | None = None,
 ) -> None:
+    registration_route = selected.get("registration_route", "")
+
     is_team_registration = (
         registration_type == "team_2_driver"
         or (
             registration_type == "multi_route"
-            and selected.get("registration_route") == "team_2_driver"
+            and registration_route == "team_2_driver"
         )
     )
 
     if not is_team_registration:
-        st.info("This registration is not a complete two-driver team, so it cannot create an Event Entry directly."
-    )
-    return
+        st.info(
+            "This registration is not a complete two-driver team, "
+            "so it cannot create an Event Entry directly."
+        )
+        return
 
     st.divider()
     st.subheader("Event entry")
@@ -492,42 +496,19 @@ def render_create_event_entry_from_registration_button(
         "This will add the team to Admin Event Entries for attendance, payment and grid management."
     )
 
-    if st.button("Create Event Entry from this registration"):
+    if st.button(
+        "Create Event Entry from this registration",
+        key=f"{event_id}_{selected.get('submission_id', 'registration')}_create_event_entry",
+    ):
         try:
             path = create_team_2_driver_entry_from_registration(
                 event_id=event_id,
                 registration=selected,
                 event=event,
-)
-            st.success("Event Entry created.")
-            st.code(path)
-            st.rerun()
-        except ValueError as exc:
-            st.warning(str(exc))
-        except Exception as exc:
-            st.error("Could not create Event Entry from registration.")
-            st.exception(exc)
-
-    if registration_type != "team_2_driver":
-        return
-
-    st.divider()
-    st.subheader("Event entry")
-
-    st.write(
-        "Create a two-driver Event Entry from this approved registration. "
-        "This will add the team to Admin Event Entries for attendance, payment and grid management."
-    )
-
-    if st.button("Create Event Entry from this registration"):
-        try:
-            path = create_team_2_driver_entry_from_registration(
-                event_id=event_id,
-                registration=selected,
             )
             st.success("Event Entry created.")
             st.code(path)
-        
+            st.rerun()
         except ValueError as exc:
             st.warning(str(exc))
         except Exception as exc:
