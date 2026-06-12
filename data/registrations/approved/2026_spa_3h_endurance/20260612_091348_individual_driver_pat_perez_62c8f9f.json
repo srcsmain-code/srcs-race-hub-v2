@@ -1,0 +1,19 @@
+{
+  "registration_type": "multi_route",
+  "registration_route": "individual_driver",
+  "driver_name": "Pat Perez",
+  "email": "pperez@user.com",
+  "phone": "0633",
+  "experience": "Intermediate",
+  "preferred_car": "GT-M Mercer V8 – Mercedes",
+  "backup_car": "GT-M Bayer V8 – BMW",
+  "can_be_team_captain": "Yes",
+  "preferred_teammate": "Jody Foster",
+  "pairing_status": "waiting",
+  "notes": "I'm avaialable",
+  "event_id": "2026_spa_3h_endurance",
+  "submission_id": "20260612_091348_individual_driver_pat_perez_62c8f9f",
+  "submitted_at_utc": "2026-06-12T09:13:48.171073+00:00",
+  "status": "approved",
+  "admin_note": ""
+}
