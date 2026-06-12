@@ -4,10 +4,42 @@ from datetime import datetime, timezone
 from typing import Any
 
 import streamlit as st
+import re
+import uuid
+from datetime import datetime, timezone
 
 from src.registrations import build_submission_id
 from src.validation import is_valid_email, required_fields_present
 
+def slugify_for_submission_id(value: str) -> str:
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "_", value)
+    value = value.strip("_")
+    return value or "registration"
+
+
+def add_submission_metadata(event: dict, payload: dict) -> dict:
+    event_id = event.get("event_id", "event")
+    route = payload.get("registration_route", "registration")
+
+    display_name = (
+        payload.get("team_name")
+        or payload.get("driver_name")
+        or payload.get("name")
+        or "registration"
+    )
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    short_id = uuid.uuid4().hex[:7]
+    slug = slugify_for_submission_id(display_name)
+
+    payload = dict(payload)
+    payload["event_id"] = event_id
+    payload["submission_id"] = f"{timestamp}_{route}_{slug}_{short_id}"
+    payload["submitted_at_utc"] = datetime.now(timezone.utc).isoformat()
+    payload["status"] = "pending"
+
+    return payload
 
 def base_payload(event: dict[str, Any], submission_id: str, status: str = "pending") -> dict[str, Any]:
     return {
@@ -384,7 +416,7 @@ def render_multi_route_registration_form(event: dict):
                     "notes": notes,
                 }
 
-                return True, payload, []
+                return True, add_submission_metadata(event, payload), []
 
         elif registration_route == "individual_driver":
             st.markdown("### Individual driver details")
@@ -439,7 +471,7 @@ def render_multi_route_registration_form(event: dict):
                     "notes": notes,
                 }
 
-                return True, payload, []
+                return True, add_submission_metadata(event, payload), []
 
         else:
             st.markdown("### Keep me updated")
@@ -494,6 +526,6 @@ def render_multi_route_registration_form(event: dict):
                     "notes": notes,
                 }
 
-                return True, payload, []   
+                return True, add_submission_metadata(event, payload), []   
 
     return False, {}, []                
