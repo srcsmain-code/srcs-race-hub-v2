@@ -1,0 +1,18 @@
+{
+  "registration_type": "multi_route",
+  "registration_route": "interest_only",
+  "name": "Joe Blocks",
+  "email": "jblocks@user.com",
+  "phone": "0633333333",
+  "interest_level": "Want to race but need more info",
+  "experience": "Casual",
+  "consent_to_contact": true,
+  "lead_status": "new",
+  "contact_status": "not_contacted",
+  "follow_up_priority": "normal",
+  "notes": "This is a test note",
+  "event_id": "2026_spa_3h_endurance",
+  "submission_id": "20260612_090848_interest_only_joe_blocks_ac9371b",
+  "submitted_at_utc": "2026-06-12T09:08:48.108012+00:00",
+  "status": "pending"
+}
