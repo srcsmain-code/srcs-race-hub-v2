@@ -272,71 +272,71 @@ def render_registration_details(selected: dict, registration_type: str) -> None:
     else:
         route = selected.get("registration_route", "")
 
-if registration_type == "multi_route":
-    st.markdown(f"### Registration route: `{route}`")
+    if registration_type == "multi_route":
+        st.markdown(f"### Registration route: `{route}`")
 
-    if route == "team_2_driver":
-        col1, col2 = st.columns(2)
+        if route == "team_2_driver":
+            col1, col2 = st.columns(2)
 
-        with col1:
-            st.markdown("#### Team")
-            st.write(f"**Team name:** {selected.get('team_name', '')}")
-            st.write(f"**Car:** {selected.get('car_choice', '')}")
-            st.write(f"**Backup car:** {selected.get('backup_car_choice', '')}")
-            st.write(f"**Experience:** {selected.get('experience', '')}")
+            with col1:
+                st.markdown("#### Team")
+                st.write(f"**Team name:** {selected.get('team_name', '')}")
+                st.write(f"**Car:** {selected.get('car_choice', '')}")
+                st.write(f"**Backup car:** {selected.get('backup_car_choice', '')}")
+                st.write(f"**Experience:** {selected.get('experience', '')}")
 
-        with col2:
-            st.markdown("#### Drivers")
-            st.write(f"**Driver 1:** {selected.get('driver_1_name', '')}")
-            st.write(f"**Driver 1 email:** {selected.get('driver_1_email', '')}")
-            st.write(f"**Driver 1 phone:** {selected.get('driver_1_phone', '')}")
-            st.write(f"**Driver 2:** {selected.get('driver_2_name', '')}")
-            st.write(f"**Driver 2 email:** {selected.get('driver_2_email', '')}")
-            st.write(f"**Driver 2 phone:** {selected.get('driver_2_phone', '')}")
+            with col2:
+                st.markdown("#### Drivers")
+                st.write(f"**Driver 1:** {selected.get('driver_1_name', '')}")
+                st.write(f"**Driver 1 email:** {selected.get('driver_1_email', '')}")
+                st.write(f"**Driver 1 phone:** {selected.get('driver_1_phone', '')}")
+                st.write(f"**Driver 2:** {selected.get('driver_2_name', '')}")
+                st.write(f"**Driver 2 email:** {selected.get('driver_2_email', '')}")
+                st.write(f"**Driver 2 phone:** {selected.get('driver_2_phone', '')}")
 
-    elif route == "individual_driver":
-        col1, col2 = st.columns(2)
+        elif route == "individual_driver":
+            col1, col2 = st.columns(2)
 
-        with col1:
-            st.markdown("#### Driver")
-            st.write(f"**Name:** {selected.get('driver_name', '')}")
-            st.write(f"**Email:** {selected.get('email', '')}")
-            st.write(f"**Phone:** {selected.get('phone', '')}")
-            st.write(f"**Experience:** {selected.get('experience', '')}")
+            with col1:
+                st.markdown("#### Driver")
+                st.write(f"**Name:** {selected.get('driver_name', '')}")
+                st.write(f"**Email:** {selected.get('email', '')}")
+                st.write(f"**Phone:** {selected.get('phone', '')}")
+                st.write(f"**Experience:** {selected.get('experience', '')}")
 
-        with col2:
-            st.markdown("#### Pairing")
-            st.write(f"**Preferred car:** {selected.get('preferred_car', '')}")
-            st.write(f"**Backup car:** {selected.get('backup_car', '')}")
-            st.write(f"**Can be team captain:** {selected.get('can_be_team_captain', '')}")
-            st.write(f"**Preferred teammate:** {selected.get('preferred_teammate', '')}")
-            st.write(f"**Pairing status:** {selected.get('pairing_status', '')}")
+            with col2:
+                st.markdown("#### Pairing")
+                st.write(f"**Preferred car:** {selected.get('preferred_car', '')}")
+                st.write(f"**Backup car:** {selected.get('backup_car', '')}")
+                st.write(f"**Can be team captain:** {selected.get('can_be_team_captain', '')}")
+                st.write(f"**Preferred teammate:** {selected.get('preferred_teammate', '')}")
+                st.write(f"**Pairing status:** {selected.get('pairing_status', '')}")
 
-    elif route == "interest_only":
-        col1, col2 = st.columns(2)
+        elif route == "interest_only":
+            col1, col2 = st.columns(2)
 
-        with col1:
-            st.markdown("#### Contact")
-            st.write(f"**Name:** {selected.get('name', '')}")
-            st.write(f"**Email:** {selected.get('email', '')}")
-            st.write(f"**Phone:** {selected.get('phone', '')}")
+            with col1:
+                st.markdown("#### Contact")
+                st.write(f"**Name:** {selected.get('name', '')}")
+                st.write(f"**Email:** {selected.get('email', '')}")
+                st.write(f"**Phone:** {selected.get('phone', '')}")
 
-        with col2:
-            st.markdown("#### Lead info")
-            st.write(f"**Interest level:** {selected.get('interest_level', '')}")
-            st.write(f"**Experience:** {selected.get('experience', '')}")
-            st.write(f"**Lead status:** {selected.get('lead_status', '')}")
-            st.write(f"**Contact status:** {selected.get('contact_status', '')}")
-            st.write(f"**Follow-up priority:** {selected.get('follow_up_priority', '')}")
+            with col2:
+                st.markdown("#### Lead info")
+                st.write(f"**Interest level:** {selected.get('interest_level', '')}")
+                st.write(f"**Experience:** {selected.get('experience', '')}")
+                st.write(f"**Lead status:** {selected.get('lead_status', '')}")
+                st.write(f"**Contact status:** {selected.get('contact_status', '')}")
+                st.write(f"**Follow-up priority:** {selected.get('follow_up_priority', '')}")
+
+        else:
+            st.warning("Unknown registration route.")
+            with st.expander("Show raw registration data"):
+                st.json(selected)
 
     else:
-        st.warning("Unknown registration route.")
         with st.expander("Show raw registration data"):
             st.json(selected)
-
-else:
-    with st.expander("Show raw registration data"):
-        st.json(selected)
 
 
     st.markdown("### Notes")
