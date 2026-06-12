@@ -476,8 +476,9 @@ def render_create_event_entry_from_registration_button(
     )
 
     if not is_team_registration:
-        st.info("This registration is not a complete two-driver team, so it cannot create an Event Entry directly.")
-        return
+        st.info("This registration is not a complete two-driver team, so it cannot create an Event Entry directly."
+    )
+    return
 
     st.divider()
     st.subheader("Event entry")
@@ -733,6 +734,43 @@ def render() -> None:
             f"{event_id}_approved_registrations.csv",
             registration_type,
     )
+        team_approved = [
+            item for item in approved
+            if (
+                registration_type == "team_2_driver"
+                or (
+                    registration_type == "multi_route"
+                    and item.get("registration_route") == "team_2_driver"
+                )
+            )
+        ]
+
+        if team_approved:
+            st.divider()
+            st.subheader("Create Event Entry from approved team registration")
+
+            approved_entry_label_map = {
+                get_registration_label(item, registration_type): item
+                for item in team_approved
+            }
+
+            approved_entry_label = st.selectbox(
+                "Select approved team registration",
+                list(approved_entry_label_map.keys()),
+                key=f"{event_id}_approved_team_registration_to_event_entry_selector",
+            )
+
+            approved_selected = approved_entry_label_map[approved_entry_label]
+
+            render_registration_details(approved_selected, registration_type)
+
+            render_create_event_entry_from_registration_button(
+                event_id,
+                approved_selected,
+                registration_type,
+                selected_event,
+            )
+
         if registration_type == "team_2_driver" and approved:
             st.divider()
             st.subheader("Create Event Entry from approved registration")
