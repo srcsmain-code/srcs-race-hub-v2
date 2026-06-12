@@ -174,32 +174,30 @@ def generic_rows(registrations: list[dict]) -> list[dict]:
 
 
 def get_registration_label(item: dict, registration_type: str) -> str:
-    submitted = item.get("submitted_at_utc", "")
-
     if registration_type == "multi_route":
         route = item.get("registration_route", "")
 
-    if route == "team_2_driver":
+        if route == "team_2_driver":
             return f"Team — {item.get('team_name', 'Unnamed team')}"
 
-    if route == "individual_driver":
+        if route == "individual_driver":
             return f"Individual — {item.get('driver_name', 'Unnamed driver')}"
 
-    if route == "interest_only":
+        if route == "interest_only":
             return f"Interest — {item.get('name', 'Unnamed lead')}"
 
-    return f"Unknown route — {item.get('submission_id', 'no id')}"
-    
-    if registration_type == "team_2_driver":
-        name = item.get("team_name", "Unnamed team")
-    elif registration_type == "single_driver":
-        name = item.get("driver_name", "Unnamed driver")
-    elif registration_type == "lead_form":
-        name = item.get("name", "Unnamed lead")
-    else:
-        name = item.get("submission_id", "Unnamed submission")
+        return f"Unknown route — {item.get('submission_id', 'no id')}"
 
-    return f"{name} — {submitted}"
+    if registration_type == "team_2_driver":
+        return f"Team — {item.get('team_name', 'Unnamed team')}"
+
+    if registration_type == "single_driver":
+        return f"Driver — {item.get('driver_name', 'Unnamed driver')}"
+
+    if registration_type == "lead_form":
+        return f"Lead — {item.get('name', 'Unnamed lead')}"
+
+    return item.get("submission_id", "Unknown registration")
 
 
 def render_team_2_driver_details(selected: dict) -> None:
