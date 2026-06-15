@@ -9,11 +9,14 @@
   "backup_car": "GT-M Aero V10 Evo2 – Audi",
   "can_be_team_captain": "Yes",
   "preferred_teammate": "",
-  "pairing_status": "waiting",
+  "pairing_status": "assigned",
   "notes": "",
   "event_id": "2026_spa_3h_endurance",
   "submission_id": "20260615_163037_individual_driver_fat_perez_c064a25",
   "submitted_at_utc": "2026-06-15T16:30:37.059942+00:00",
   "status": "approved",
-  "admin_note": ""
+  "admin_note": "",
+  "event_entry_created": false,
+  "paired_event_entry_id": "perez_racing",
+  "paired_team_name": "Perez Racing"
 }
