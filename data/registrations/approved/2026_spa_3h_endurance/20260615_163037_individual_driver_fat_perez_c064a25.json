@@ -1,0 +1,19 @@
+{
+  "registration_type": "multi_route",
+  "registration_route": "individual_driver",
+  "driver_name": "Fat Perez",
+  "email": "fat@perez.com",
+  "phone": "0633",
+  "experience": "New",
+  "preferred_car": "GT-M Aero V10 Evo2 – Audi",
+  "backup_car": "GT-M Aero V10 Evo2 – Audi",
+  "can_be_team_captain": "Yes",
+  "preferred_teammate": "",
+  "pairing_status": "waiting",
+  "notes": "",
+  "event_id": "2026_spa_3h_endurance",
+  "submission_id": "20260615_163037_individual_driver_fat_perez_c064a25",
+  "submitted_at_utc": "2026-06-15T16:30:37.059942+00:00",
+  "status": "approved",
+  "admin_note": ""
+}
