@@ -4,7 +4,7 @@
   "entry_format": "team_2_driver",
   "source_registration_id": "20260612_091242_team_2_driver_porsche_racing_0db083e",
   "source_registration_path": "data/registrations/approved/2026_spa_3h_endurance/20260612_091242_team_2_driver_porsche_racing_0db083e.json",
-  "team_name": "Porsche Racing",
+  "team_name": "Fast Racing",
   "car_choice": "GT-M Aero V10 Evo2 – Audi",
   "backup_car_choice": "GT-M Akuro V6 Evo2 – Acura",
   "driver_1_name": "Jack Fast",
@@ -19,7 +19,7 @@
   "created_at_utc": "2026-06-12T10:01:34.984721+00:00",
   "primary_contact_driver": "driver_1",
   "ready_status": "not_ready",
-  "driver_1_email": "jfast@user.com",
+  "driver_1_email": "pperez@user.com",
   "driver_1_phone": "0633",
   "driver_1_contact_status": "not_contacted",
   "driver_1_standard_fee": 0.0,
@@ -28,7 +28,7 @@
   "driver_1_amount_paid": 0.0,
   "driver_1_payment_method": "",
   "driver_1_payment_note": "",
-  "driver_2_email": "pfast@user.com",
+  "driver_2_email": "fat@perez.com",
   "driver_2_phone": "0633",
   "driver_2_contact_status": "not_contacted",
   "driver_2_standard_fee": 0.0,
@@ -46,5 +46,5 @@
   "team_amount_due": 0.0,
   "team_amount_paid": 0.0,
   "team_payment_status": "comped",
-  "updated_at_utc": "2026-06-12T10:01:34.985089+00:00"
+  "updated_at_utc": "2026-06-15T16:34:04.548729+00:00"
 }
