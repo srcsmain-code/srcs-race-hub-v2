@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from src.event_entries import (
+    create_team_2_driver_entry_from_individual_registrations,
     create_team_2_driver_entry_from_registration,
     list_event_entries,
 )
@@ -13,6 +14,7 @@ from src.github_writer import (
     list_registrations,
     update_registration_file,
     update_registration_status,
+    commit_json_to_github,
 )
 from src.ui_components import show_header
 
@@ -60,6 +62,8 @@ def multi_route_rows(registrations: list[dict]) -> list[dict]:
                 "Car": item.get("car_choice") or item.get("preferred_car", ""),
                 "Backup Car": item.get("backup_car_choice") or item.get("backup_car", ""),
                 "Status Detail": status_detail,
+                "Pairing Status": item.get("pairing_status", ""),
+                "Paired Team": item.get("paired_team_name", ""),
                 "Status": item.get("status", ""),
                 "Event Entry Created": "Yes" if item.get("event_entry_created", False) else "No",
                 "Submitted UTC": item.get("submitted_at_utc", ""),
@@ -553,6 +557,141 @@ def add_event_entry_created_flag(
 
     return enriched
 
+def mark_individual_registration_assigned(
+    registration: dict,
+    paired_event_entry_id: str,
+    paired_team_name: str,
+) -> None:
+    path = registration.get("_github_path", "")
+
+    if not path:
+        raise ValueError("Registration is missing GitHub path.")
+
+    updated = dict(registration)
+    updated.pop("_github_path", None)
+
+    updated["pairing_status"] = "assigned"
+    updated["paired_event_entry_id"] = paired_event_entry_id
+    updated["paired_team_name"] = paired_team_name
+
+    commit_json_to_github(
+        path=path,
+        payload=updated,
+        message=f"Mark individual registration assigned: {registration.get('driver_name', '')}",
+    )
+
+def render_create_event_entry_from_individuals(
+    event_id: str,
+    approved: list[dict],
+    event: dict,
+) -> None:
+    individual_approved = [
+        item for item in approved
+        if (
+            item.get("registration_route") == "individual_driver"
+            and item.get("pairing_status", "waiting") != "assigned"
+        )
+    ]
+
+    if len(individual_approved) < 2:
+        return
+
+    st.divider()
+    st.subheader("Create team from two approved individual drivers")
+
+    st.write(
+        "Select two approved individual drivers, assign a team name and car, "
+        "then create a normal two-driver Event Entry."
+    )
+
+    label_map = {
+        f"{item.get('driver_name', 'Unnamed driver')} — {item.get('email', '')}": item
+        for item in individual_approved
+    }
+
+    labels = list(label_map.keys())
+
+    with st.form(f"{event_id}_create_team_from_individuals_form"):
+        col_a, col_b = st.columns(2)
+
+        with col_a:
+            driver_1_label = st.selectbox(
+                "Driver 1",
+                labels,
+                key=f"{event_id}_pair_driver_1",
+            )
+
+        with col_b:
+            driver_2_label = st.selectbox(
+                "Driver 2",
+                labels,
+                index=1 if len(labels) > 1 else 0,
+                key=f"{event_id}_pair_driver_2",
+            )
+
+        team_name = st.text_input("New team name")
+
+        cars = event.get("cars", [])
+
+        if cars:
+            car_choice = st.selectbox("Car", cars, key=f"{event_id}_pair_car")
+            backup_car_choice = st.selectbox("Backup car", cars, key=f"{event_id}_pair_backup_car")
+        else:
+            car_choice = st.text_input("Car")
+            backup_car_choice = st.text_input("Backup car")
+
+        notes = st.text_area("Pairing notes")
+
+        submitted = st.form_submit_button("Create team Event Entry from these drivers")
+
+    if submitted:
+        driver_1 = label_map[driver_1_label]
+        driver_2 = label_map[driver_2_label]
+
+        if driver_1.get("submission_id") == driver_2.get("submission_id"):
+            st.error("Please select two different individual drivers.")
+            return
+
+        if not team_name:
+            st.error("Team name is required.")
+            return
+
+        try:
+            path = create_team_2_driver_entry_from_individual_registrations(
+                event_id=event_id,
+                driver_1_registration=driver_1,
+                driver_2_registration=driver_2,
+                team_name=team_name,
+                car_choice=car_choice,
+                backup_car_choice=backup_car_choice,
+                event=event,
+                notes=notes,
+            )
+
+            entry_id = path.split("/")[-1].replace(".json", "")
+
+            mark_individual_registration_assigned(
+                driver_1,
+                paired_event_entry_id=entry_id,
+                paired_team_name=team_name,
+            )
+
+            mark_individual_registration_assigned(
+                driver_2,
+                paired_event_entry_id=entry_id,
+                paired_team_name=team_name,
+            )
+
+            st.success("Team Event Entry created from individual drivers.")
+            st.code(path)
+            st.rerun()
+
+        except ValueError as exc:
+            st.warning(str(exc))
+        except Exception as exc:
+            st.error("Could not create Event Entry from individual drivers.")
+            st.exception(exc)
+
 def render() -> None:
     show_header("Race Hub Admin", "Event registrations and operational review")
 
@@ -752,6 +891,13 @@ def render() -> None:
                 selected_event,
             )
 
+        if registration_type == "multi_route":
+            render_create_event_entry_from_individuals(
+            event_id=event_id,
+            approved=approved,
+            event=selected_event,
+        )
+        
         if registration_type == "team_2_driver" and approved:
             st.divider()
             st.subheader("Create Event Entry from approved registration")

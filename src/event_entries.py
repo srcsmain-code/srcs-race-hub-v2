@@ -208,6 +208,116 @@ def create_single_driver_event_entry(
 
     return save_event_entry(event_id, entry)
 
+def create_team_2_driver_entry_from_individual_registrations(
+    event_id: str,
+    driver_1_registration: dict[str, Any],
+    driver_2_registration: dict[str, Any],
+    team_name: str,
+    car_choice: str,
+    backup_car_choice: str,
+    event: dict | None = None,
+    notes: str = "",
+) -> str:
+    driver_1_route = driver_1_registration.get("registration_route", "")
+    driver_2_route = driver_2_registration.get("registration_route", "")
+
+    if driver_1_route != "individual_driver":
+        raise ValueError("Driver 1 registration is not an individual driver registration.")
+
+    if driver_2_route != "individual_driver":
+        raise ValueError("Driver 2 registration is not an individual driver registration.")
+
+    if driver_1_registration.get("submission_id") == driver_2_registration.get("submission_id"):
+        raise ValueError("Please select two different individual drivers.")
+
+    if not team_name:
+        raise ValueError("Team name is required.")
+
+    driver_1_name = driver_1_registration.get("driver_name", "")
+    driver_2_name = driver_2_registration.get("driver_name", "")
+
+    if not driver_1_name or not driver_2_name:
+        raise ValueError("Both individual registrations must have driver names.")
+
+    entry_id = build_entry_id(team_name, "regular")
+
+    existing_entries = list_event_entries(event_id)
+    existing_entry_ids = {
+        entry.get("entry_id", "")
+        for entry in existing_entries
+    }
+
+    if entry_id in existing_entry_ids:
+        raise ValueError(f"An Event Entry already exists for this team: {team_name}.")
+
+    standard_fee = get_standard_driver_entry_fee(event)
+
+    pairing_note = (
+        f"Created from individual registrations: "
+        f"{driver_1_registration.get('submission_id', '')} + "
+        f"{driver_2_registration.get('submission_id', '')}"
+    )
+
+    combined_notes = notes.strip()
+    if combined_notes:
+        combined_notes = f"{combined_notes}\n\n{pairing_note}"
+    else:
+        combined_notes = pairing_note
+
+    entry = {
+        "entry_id": entry_id,
+        "event_id": event_id,
+        "entry_format": "team_2_driver",
+        "source_registration_id": "",
+        "source_registration_path": "",
+        "source_registration_ids": [
+            driver_1_registration.get("submission_id", ""),
+            driver_2_registration.get("submission_id", ""),
+        ],
+        "source_registration_paths": [
+            driver_1_registration.get("_github_path", ""),
+            driver_2_registration.get("_github_path", ""),
+        ],
+        "team_name": team_name,
+        "car_choice": car_choice,
+        "backup_car_choice": backup_car_choice,
+        "entry_type": "regular",
+        "reserve_status": "not_applicable",
+        "grid_status": "not_assigned",
+        "primary_contact_driver": "driver_1",
+        "ready_status": "not_ready",
+
+        "driver_1_name": driver_1_name,
+        "driver_1_attendance_status": "expected",
+        "driver_1_email": driver_1_registration.get("email", ""),
+        "driver_1_phone": driver_1_registration.get("phone", ""),
+        "driver_1_contact_status": "not_contacted",
+        "driver_1_standard_fee": standard_fee,
+        "driver_1_discount_amount": 0.0,
+        "driver_1_discount_reason": "none",
+        "driver_1_amount_paid": 0.0,
+        "driver_1_payment_method": "",
+        "driver_1_payment_note": "",
+
+        "driver_2_name": driver_2_name,
+        "driver_2_attendance_status": "expected",
+        "driver_2_email": driver_2_registration.get("email", ""),
+        "driver_2_phone": driver_2_registration.get("phone", ""),
+        "driver_2_contact_status": "not_contacted",
+        "driver_2_standard_fee": standard_fee,
+        "driver_2_discount_amount": 0.0,
+        "driver_2_discount_reason": "none",
+        "driver_2_amount_paid": 0.0,
+        "driver_2_payment_method": "",
+        "driver_2_payment_note": "",
+
+        "notes": combined_notes,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+
+    entry = apply_team_payment_summary(entry)
+
+    return save_event_entry(event_id, entry)
 
 def create_team_2_driver_event_entry(
     event_id: str,
