@@ -22,7 +22,11 @@ def render() -> None:
     event_name = event.get("event_name", "SRCS Event")
     event_short_name = event.get("event_short_name", event_name)
 
-    show_header(f"Register for {event_name}", "Creates a pending registration submission")
+    show_header(
+    f"Register for {event_name}",
+    "Creates a pending registration submission",
+    banner_image=event.get("banner_image"),
+)
 
     if not event.get("registration_open", False):
         st.warning("Registration for this event is currently closed.")

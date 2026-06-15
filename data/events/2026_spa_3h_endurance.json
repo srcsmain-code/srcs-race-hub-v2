@@ -1,6 +1,7 @@
 {
   "event_id": "2026_spa_3h_endurance",
   "event_name": "The SRCS Spa 3-hour Endurance",
+  "banner_image": "assets/events/srcs_gt3_spa_3hour_banner.png",
   "event_short_name": "Spa 3H",
   "category": "GT3",
   "event_type": "endurance",
